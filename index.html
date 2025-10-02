@@ -9,7 +9,7 @@
         * {
             box-sizing: border-box;
         }
-        /* 기본 스타일 및 헤더 */
+        /* 기본 스타일 및 헤더 (PC 기준) */
         body {
             font-family: 'Arial Black', sans-serif;
             margin: 0;
@@ -33,9 +33,10 @@
         h1 { margin: 0; font-size: 3.5em; letter-spacing: 2px; text-transform: uppercase; }
         h2 { margin-top: 10px; font-size: 1.5em; font-weight: normal; }
 
-        /* 지도와 목록 컨테이너 */
+        /* 지도와 목록 컨테이너 (PC 기준 - 가로 배치) */
         .map-container {
             display: flex;
+            flex-direction: row; /* 기본 가로 배치 */
             width: 95%;
             max-width: 1400px;
             height: 75vh; /* 화면 높이에 맞춰 조정 */
@@ -45,8 +46,6 @@
             border: 5px solid #CC0000;
         }
         #map { flex-basis: 70%; height: 100%; }
-
-        /* 목록 패널 스타일 */
         #list-panel {
             flex-basis: 30%;
             background-color: #f5f5f5;
@@ -54,6 +53,8 @@
             overflow-y: auto;
             font-size: 14px;
         }
+
+        /* 목록 패널 내부 스타일 */
         #list-panel h3 { color: #CC0000; margin-top: 0; padding-bottom: 5px; border-bottom: 2px solid #ccc; }
         .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-weight: bold; }
         /* 범례 아이콘에 테두리를 추가하여 시인성 향상 (노란색은 특히 중요) */
@@ -124,6 +125,65 @@
             font-size: 0.9em;
             margin-top: auto;
         }
+
+        /* ===================================== */
+        /* 모바일 반응형 UI (Mobile Responsive UI) */
+        /* ===================================== */
+        @media (max-width: 768px) {
+            header {
+                padding: 80px 15px 30px 15px; /* 상단 패딩 증가하여 링크 공간 확보, 좌우 패딩 축소 */
+            }
+
+            h1 {
+                font-size: 2.2em; /* 타이틀 폰트 크기 축소 */
+            }
+
+            h2 {
+                font-size: 1.1em; /* 서브타이틀 폰트 크기 축소 */
+            }
+
+            /* 상단 우측 컨테이너 위치 조정 */
+            #top-right-container {
+                top: 10px;
+                right: 10px;
+            }
+
+            #language-selector button {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+
+            #youtube-link {
+                font-size: 11px;
+                padding: 4px 6px;
+            }
+
+            /* 지도 컨테이너 레이아웃 변경 (가로 -> 세로) */
+            .map-container {
+                flex-direction: column; /* 핵심 변경: 세로 배치 */
+                height: auto; /* 높이 자동 조절 */
+                min-height: unset;
+                margin: 20px 0;
+                width: 95%; /* 좌우 여백 유지 */
+            }
+
+            /* 지도 영역 설정 */
+            #map {
+                flex-basis: auto; /* PC 설정 초기화 */
+                width: 100%;
+                height: 50vh; /* 모바일 화면 높이의 50% 사용 */
+            }
+
+            /* 목록 패널 영역 설정 */
+            #list-panel {
+                flex-basis: auto; /* PC 설정 초기화 */
+                width: 100%;
+                /* 목록 패널의 최대 높이를 설정하여 스크롤 가능하게 함 */
+                max-height: 60vh; 
+                overflow-y: auto;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -173,7 +233,7 @@
         const TOTAL_LOCATIONS = 100; // 총 로케이션 수 (100개로 증가)
 
         // ----------------------------------------------------
-        // 1. 다국어 텍스트 데이터 (신규 카테고리 추가)
+        // 1. 다국어 텍스트 데이터
         // ----------------------------------------------------
         const translations = {
             'ko': {
@@ -184,7 +244,7 @@
                 categories: {
                     'ABT1': '영웅본색 1', 'CHUNGKING': '중경삼림 & 타락천사',
                     'THIEVES': '도둑들', 'ABT2': '영웅본색 2', 'COMRADES': '첨밀밀',
-                    'JOJO': '죠죠의 기묘한 모험' // 추가됨
+                    'JOJO': '죠죠의 기묘한 모험'
                 },
                 mapLangCode: 'ko'
             },
@@ -196,7 +256,7 @@
                 categories: {
                     'ABT1': '男たちの挽歌', 'CHUNGKING': '恋する惑星 & 天使の涙',
                     'THIEVES': '泥棒たち', 'ABT2': '男たちの挽歌 2', 'COMRADES': 'ラブソング',
-                    'JOJO': 'ジョジョの奇妙な冒険' // 추가됨
+                    'JOJO': 'ジョジョの奇妙な冒険'
                 },
                 mapLangCode: 'ja'
             },
@@ -208,7 +268,7 @@
                 categories: {
                     'ABT1': 'A Better Tomorrow', 'CHUNGKING': 'Chungking & Fallen Angels',
                     'THIEVES': 'The Thieves', 'ABT2': 'A Better Tomorrow 2', 'COMRADES': 'Comrades, Almost a Love Story',
-                    'JOJO': 'Jojo\'s Bizarre Adventure' // 추가됨
+                    'JOJO': 'Jojo\'s Bizarre Adventure'
                 },
                 mapLangCode: 'en'
             },
@@ -220,7 +280,7 @@
                 categories: {
                     'ABT1': '英雄本色', 'CHUNGKING': '重慶森林 & 墮落天使',
                     'THIEVES': '盜賊門', 'ABT2': '英雄本色 2', 'COMRADES': '甜蜜蜜',
-                    'JOJO': 'JoJo的奇妙冒險' // 추가됨
+                    'JOJO': 'JoJo的奇妙冒險'
                 },
                 mapLangCode: 'zh-HK'
             }
@@ -395,8 +455,6 @@
         }
 
         // 제공된 데이터를 기반으로 마커를 추가하는 함수
-        // ** 데이터 구조에 youtube_id와 start_time(초 단위) 추가됨 **
-        // ** 모든 설명은 다국어 번역 완료됨 **
         function addExportedMarkers() {
             const exportedLocations = [
                 // [중경삼림 & 타락천사] (CHUNGKING) - 44개
@@ -472,7 +530,6 @@
                 { title: "Central Pier No.9 中環9號碼頭", lat: 22.28615915634227, lng: 114.16248914418094, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 33, description: { ko: "처음에 홍콩 도둑들끼리 얘기하는 장면", jp: "最初に香港の泥棒たち同士で話すシーン", en: "The scene where the Hong Kong thieves talk amongst themselves at the beginning", 'zh-hk': "開頭香港盜賊們交談的場景" }},
 
                 // [영웅본색2] (ABT2) - 6개
-                // '용사의 딸' -> '석천의 딸'로 설명 수정됨
                 { title: "St. Raphael's Catholic Cemetery 天主教聖辣法厄爾墳場", lat: 22.349831733991785, lng: 114.14571694076294, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 1919, description: { ko: "석천의 딸이 묻힌 곳", jp: "ディーン・セキの娘が埋葬された場所", en: "Where Dean Shek's daughter is buried", 'zh-hk': "石天的女兒安葬的地方" }},
                 { title: "French International School 法國國際學校(小學部)", lat: 22.267307273307242, lng: 114.1899352376231, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 857, description: { ko: "장국영 여친 면접 (Jardine's Lookout Campus)", jp: "レスリー・チャンの彼女の面接 (Jardine's Lookout Campus)", en: "Leslie Cheung's girlfriend's interview (Jardine's Lookout Campus)", 'zh-hk': "張國榮女友面試 (Jardine's Lookout Campus)" }},
                 { title: "Graduate Law Centre", lat: 22.281318826251358, lng: 114.16279323317676, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 608, description: { ko: "차타고 지나는 장면에서 나옴", jp: "車で通り過ぎるシーンで登場", en: "Appears in the scene passing by car", 'zh-hk': "乘車經過的場景中出現" }},
@@ -641,7 +698,9 @@
 
                 // 목록 클릭 이벤트
                 listItem.onclick = () => {
-                    map.setZoom(16); // 클릭 시 적절한 줌 레벨로 확대
+                    // 모바일 환경에서는 줌 레벨을 조금 더 가깝게 설정
+                    const zoomLevel = window.innerWidth <= 768 ? 17 : 16;
+                    map.setZoom(zoomLevel); 
                     google.maps.event.trigger(item.marker, 'click');
                 };
 
