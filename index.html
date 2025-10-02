@@ -25,7 +25,7 @@
             width: 100%;
             background-color: #CC0000;
             color: #FFFFFF;
-            padding: 40px 20px;
+            padding: 60px 20px 40px 20px; /* 상단 패딩을 늘려 링크 공간 확보 */
             text-align: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             position: relative;
@@ -56,19 +56,26 @@
         }
         #list-panel h3 { color: #CC0000; margin-top: 0; padding-bottom: 5px; border-bottom: 2px solid #ccc; }
         .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-weight: bold; }
-        /* 범례 아이콘에 테두리를 추가하여 시인성 향상 */
+        /* 범례 아이콘에 테두리를 추가하여 시인성 향상 (노란색은 특히 중요) */
         .legend-icon { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #666; }
         .location-item { padding: 8px 5px; cursor: pointer; border-bottom: 1px dashed #cccccc; }
         .location-item:hover { background-color: #e0e0e0; }
         .location-item:last-child { border-bottom: none; }
 
+        /* 상단 우측 컨테이너 (언어 선택 + 유튜브 링크 그룹화) */
+        #top-right-container {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            text-align: right;
+        }
+
         /* 언어 선택 버튼 스타일 */
         #language-selector {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             display: flex;
             gap: 5px;
+            justify-content: flex-end; /* 버튼들을 우측 정렬 */
+            margin-bottom: 8px; /* 링크와의 간격 */
         }
         #language-selector button {
             background-color: #FFFFFF;
@@ -87,6 +94,26 @@
             color: #FFFFFF;
         }
 
+        /* 유튜브 링크 스타일 */
+        #youtube-link {
+            color: #FFFFFF;
+            text-decoration: none;
+            font-family: 'Arial', sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 5px 8px;
+            /* 가독성을 위해 배경 추가 */
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 3px;
+            transition: background-color 0.3s;
+            display: inline-block;
+        }
+        #youtube-link:hover {
+            background-color: rgba(0,0,0,0.6);
+            text-decoration: underline;
+        }
+
+
         /* 푸터 */
         footer {
             width: 100%;
@@ -101,14 +128,19 @@
 </head>
 <body>
     <header>
-        <div id="language-selector">
-            <button data-lang="ko" class="active" onclick="switchLanguage('ko', this)">한국어</button>
-            <button data-lang="jp" onclick="switchLanguage('jp', this)">日本語</button>
-            <button data-lang="en" onclick="switchLanguage('en', this)">English</button>
-            <button data-lang="zh-hk" onclick="switchLanguage('zh-hk', this)">廣東話</button>
+        <div id="top-right-container">
+            <div id="language-selector">
+                <button data-lang="ko" class="active" onclick="switchLanguage('ko', this)">한국어</button>
+                <button data-lang="jp" onclick="switchLanguage('jp', this)">日本語</button>
+                <button data-lang="en" onclick="switchLanguage('en', this)">English</button>
+                <button data-lang="zh-hk" onclick="switchLanguage('zh-hk', this)">廣東話</button>
+            </div>
+            <div id="youtube-link-container">
+                <a href="https://www.youtube.com/channel/UCMLv4l3L2VDpJdRvq6zTbcw" target="_blank" id="youtube-link">홍콩본색 유튜브 채널 바로가기</a>
+            </div>
         </div>
         <h1 id="header-title">홍콩본색이 다녀온 영화촬영지</h1>
-        <h2 id="header-subtitle">총 99개 홍콩 영화 속 필름 로케 후보지</h2>
+        <h2 id="header-subtitle">총 100개 홍콩 영화 속 필름 로케 후보지</h2>
     </header>
 
     <div class="map-container">
@@ -118,7 +150,7 @@
             <div id="legend">
                 </div>
 
-            <h3 id="list-header" style="margin-top: 20px;">로케이션 목록 (총 99개)</h3>
+            <h3 id="list-header" style="margin-top: 20px;">로케이션 목록 (총 100개)</h3>
             <div id="location-list">
                 </div>
         </div>
@@ -138,45 +170,57 @@
         let activeMarkers = [];
         let currentLang = 'ko';
         const API_KEY = "AIzaSyA8iM2FvVwK37oTKyDpmoPTuPylBErGRlU"; // Google Maps API Key
-        const TOTAL_LOCATIONS = 99; // 총 로케이션 수 (99개로 확인됨)
+        const TOTAL_LOCATIONS = 100; // 총 로케이션 수 (100개로 증가)
 
         // ----------------------------------------------------
-        // 1. 다국어 텍스트 데이터 (불필요한 카테고리 제거됨)
+        // 1. 다국어 텍스트 데이터 (신규 카테고리 추가)
         // ----------------------------------------------------
         const translations = {
             'ko': {
                 title: "홍콩본색이 다녀온 영화촬영지", subtitle: `총 ${TOTAL_LOCATIONS}개 홍콩 영화 속 필름 로케 후보지`, legend: "영화 촬영지 목록", list_header: `로케이션 목록 (총 ${TOTAL_LOCATIONS}개)`, footer: "© 2025 홍콩본색. All Rights Reserved.",
                 find_place: "찾아낸 장소: ", no_place: "여긴 등록된 장소가 없네!", details: "Google 지도에서 길찾기",
+                youtube_link: "홍콩본색 유튜브 채널 바로가기",
+                youtube_title: "관련 영상 보기",
                 categories: {
                     'ABT1': '영웅본색 1', 'CHUNGKING': '중경삼림 & 타락천사',
-                    'THIEVES': '도둑들', 'ABT2': '영웅본색 2', 'COMRADES': '첨밀밀'
+                    'THIEVES': '도둑들', 'ABT2': '영웅본색 2', 'COMRADES': '첨밀밀',
+                    'JOJO': '죠죠의 기묘한 모험' // 추가됨
                 },
                 mapLangCode: 'ko'
             },
             'jp': {
                 title: "香港本色が訪れた映画ロケ地", subtitle: `全${TOTAL_LOCATIONS}か所の香港映画ロケ候補地`, legend: "映画撮影地リスト", list_header: `ロケーション一覧 (全${TOTAL_LOCATIONS}か所)`, footer: "© 2025 香港本色. All Rights Reserved.",
                 find_place: "見つけた場所: ", no_place: "ここは登録されていません！", details: "Googleマップでルート検索",
+                youtube_link: "香港本色 YouTube チャンネルへ",
+                youtube_title: "関連動画を見る",
                 categories: {
                     'ABT1': '男たちの挽歌', 'CHUNGKING': '恋する惑星 & 天使の涙',
-                    'THIEVES': '泥棒たち', 'ABT2': '男たちの挽歌 2', 'COMRADES': 'ラブソング'
+                    'THIEVES': '泥棒たち', 'ABT2': '男たちの挽歌 2', 'COMRADES': 'ラブソング',
+                    'JOJO': 'ジョジョの奇妙な冒険' // 추가됨
                 },
                 mapLangCode: 'ja'
             },
             'en': {
                 title: "Hongkong Noir Film Locations", subtitle: `${TOTAL_LOCATIONS} Hong Kong Film Location Candidates`, legend: "Film Location List", list_header: `Location List (Total ${TOTAL_LOCATIONS})`, footer: "© 2025 Hongkong Bonsak. All Rights Reserved.",
                 find_place: "Found Place: ", no_place: "No registered place here!", details: "Get Directions on Google Maps",
+                youtube_link: "Go to Hongkong Bonsaek YouTube",
+                youtube_title: "Watch Related Video",
                 categories: {
                     'ABT1': 'A Better Tomorrow', 'CHUNGKING': 'Chungking & Fallen Angels',
-                    'THIEVES': 'The Thieves', 'ABT2': 'A Better Tomorrow 2', 'COMRADES': 'Comrades, Almost a Love Story'
+                    'THIEVES': 'The Thieves', 'ABT2': 'A Better Tomorrow 2', 'COMRADES': 'Comrades, Almost a Love Story',
+                    'JOJO': 'Jojo\'s Bizarre Adventure' // 추가됨
                 },
                 mapLangCode: 'en'
             },
             'zh-hk': {
                 title: "香港本色到訪的電影取景地", subtitle: `共${TOTAL_LOCATIONS}個香港電影取景地候選地點`, legend: "電影取景地清單", list_header: `地點列表 (共${TOTAL_LOCATIONS}個)`, footer: "© 2025 香港本色 版權所有",
                 find_place: "找到的地點: ", no_place: "這裡沒有註冊地點！", details: "在 Google 地圖上規劃路線",
+                youtube_link: "前往香港本色 YouTube 頻道",
+                youtube_title: "觀看相關影片",
                 categories: {
                     'ABT1': '英雄本色', 'CHUNGKING': '重慶森林 & 墮落天使',
-                    'THIEVES': '盜賊門', 'ABT2': '英雄本色 2', 'COMRADES': '甜蜜蜜'
+                    'THIEVES': '盜賊門', 'ABT2': '英雄本色 2', 'COMRADES': '甜蜜蜜',
+                    'JOJO': 'JoJo的奇妙冒險' // 추가됨
                 },
                 mapLangCode: 'zh-HK'
             }
@@ -212,7 +256,8 @@
             'CHUNGKING': { color: '#CC0000' }, // 중경삼림 & 타락천사 (빨강)
             'THIEVES': { color: '#8B4513' },   // 도둑들 (갈색)
             'ABT2': { color: '#A9A9A9' },      // 영웅본색2 (회색 - DarkGray)
-            'COMRADES': { color: '#1E90FF' }   // 첨밀밀 (파랑 - DodgerBlue)
+            'COMRADES': { color: '#1E90FF' },  // 첨밀밀 (파랑 - DodgerBlue)
+            'JOJO': { color: '#FFD700' }       // 죠죠의 기묘한 모험 (노란색 - Gold)
         };
 
         window.initMap = function() {
@@ -237,7 +282,10 @@
             });
 
             service = new google.maps.places.PlacesService(map);
-            infoWindow = new google.maps.InfoWindow();
+            // InfoWindow 최대 너비 설정 (유튜브 영상 크기 고려)
+            infoWindow = new google.maps.InfoWindow({
+                maxWidth: 320
+            });
 
             activeMarkers = addExportedMarkers();
 
@@ -276,6 +324,7 @@
             loadMapScript(translations[currentLang].mapLangCode);
         });
 
+        // 언어 변경 함수
         function switchLanguage(lang, element) {
             if (currentLang === lang) return;
             currentLang = lang;
@@ -290,6 +339,7 @@
             document.getElementById('legend-title').innerText = translations[lang].legend;
             document.getElementById('list-header').innerText = translations[lang].list_header;
             document.getElementById('footer-text').innerText = translations[lang].footer;
+            document.getElementById('youtube-link').innerText = translations[lang].youtube_link;
 
             // 맵 스크립트 다시 로드 (언어 변경 적용)
             loadMapScript(langCode);
@@ -297,12 +347,15 @@
 
         function getMarkerIcon(category) {
             const config = CATEGORIES[category] || CATEGORIES['CHUNGKING']; // 기본값 설정
+            
+            // 노란색 마커는 테두리를 검정색으로 하여 시인성 확보
+            const strokeColor = (category === 'JOJO') ? '#000000' : '#FFFFFF';
 
             return {
                 path: google.maps.SymbolPath.CIRCLE,
                 fillColor: config.color,
                 fillOpacity: 1,
-                strokeColor: '#FFFFFF', // 가시성을 위해 흰색 테두리 추가
+                strokeColor: strokeColor,
                 strokeWeight: 1.5,
                 scale: 8,
             };
@@ -342,117 +395,122 @@
         }
 
         // 제공된 데이터를 기반으로 마커를 추가하는 함수
+        // ** 데이터 구조에 youtube_id와 start_time(초 단위) 추가됨 **
+        // ** 모든 설명은 다국어 번역 완료됨 **
         function addExportedMarkers() {
-            // ** 제공된 원본 리스트를 기준으로 데이터를 재구성했습니다. (총 99개) **
             const exportedLocations = [
                 // [중경삼림 & 타락천사] (CHUNGKING) - 44개
-                { title: "ESSO LAM TEI 埃索 藍地油站", lat: 22.42345586569671, lng: 113.98332595829308, category: 'CHUNGKING', description: "타락천사 추가엔딩 주유소" },
-                { title: "United Centre 統一中心", lat: 22.278609903076784, lng: 114.16593268413227, category: 'CHUNGKING', description: "타락천사 추가 엔딩씬" },
-                { title: "Pedder Street 畢打街", lat: 22.28202819271243, lng: 114.1572800000013, category: 'CHUNGKING', description: "막문위 에이전트 엇갈리는 곳 (近中環站 D1 出口)" },
-                { title: "愛群理髮 Oi Kwan Barber Shop", lat: 22.275620882002876, lng: 114.17280474816528, category: 'CHUNGKING', description: "금성무 이발소 씬" },
-                { title: "The Lockhart Bar", lat: 22.27815865897137, lng: 114.17170785443638, category: 'CHUNGKING', description: "타락천사 미니버스 씬" },
-                { title: "Moonkok (Central) 門角 (中環)", lat: 22.282269847274467, lng: 114.15409133544851, category: 'CHUNGKING', description: "중경삼림 양조위 집" },
-                { title: "18 On Lan St", lat: 22.280671057039136, lng: 114.15665048844154, category: 'CHUNGKING', description: "금성무가 전여친 메이를 기다리며 깡통찬곳" },
-                { title: "Blend & Grind Mid-Levels", lat: 22.280893265289578, lng: 114.15211387520644, category: 'CHUNGKING', description: "금성무 전화 씬" },
-                { title: "6 Humphreys Ave", lat: 22.29847509388113, lng: 114.17319215889565, category: 'CHUNGKING', description: "중경삼림 1부 엔딩, 술집 여자 비 올때 문 열어보는 곳" },
-                { title: "Jashan Celebrating Indian Cuisine", lat: 22.28223316498041, lng: 114.15401775889565, category: 'CHUNGKING', description: "중경삼림 양조위 집2 (경찰서 뷰를 보고싶다면)" },
-                { title: "Hollywood Road (outside Post Office) 荷利活道", lat: 22.281622337390928, lng: 114.1548993877317, category: 'CHUNGKING', description: "양조위 지나가던 경찰서 앞 버스 정류장 (郵政局外)" },
-                { title: "Hong Kong China Softball Association 中國香港壘球總會", lat: 22.32227026242013, lng: 114.1853739975534, category: 'CHUNGKING', description: "중경삼림 금성무가 달리던 야구장" },
-                { title: "7-Eleven (蘭桂坊店)", lat: 22.28091335416607, lng: 114.15571552453704, category: 'CHUNGKING', description: "미드나잇 익스프레스 (7-11便利店)" },
-                { title: "Yung Kee Tower 鏞記大廈", lat: 22.281426132582393, lng: 114.1557050466272, category: 'CHUNGKING', description: "타락천사 허라우산 앞에서 금성무가 전단지 알바하는 장면" },
-                { title: "Connaught Rd Central", lat: 22.28334445045923, lng: 114.15784781779114, category: 'CHUNGKING', description: "타락천사 터널씬1" },
-                { title: "Pak Fook Building", lat: 22.274870748731576, lng: 114.1725065545295, category: 'CHUNGKING', description: "여명 죽는 레스토랑" },
-                { title: "Chungking House 重慶招待所", lat: 22.296553860020964, lng: 114.17240926441836, category: 'CHUNGKING', description: "중경삼림 1부 무대, 타락천사 금성무 가족이 운영하는 호스텔" },
-                { title: "Cross Harbour Tunnel", lat: 22.29257830044642, lng: 114.18194020257019, category: 'CHUNGKING', description: "타락천사 터널씬2" },
-                { title: "K11 ATELIER King's Road", lat: 22.291562695131322, lng: 114.2074883191772, category: 'CHUNGKING', description: "금성무랑 암살자 파트너(이가흔) 만나는 음식점" },
-                { title: "자딘 하우스 怡和大廈", lat: 22.284521291616436, lng: 114.15892169070108, category: 'CHUNGKING', description: "타락천사 엔딩에 잠깐 나옴" },
-                { title: "26 D'Aguilar St", lat: 22.281147833265514, lng: 114.15566403573631, category: 'CHUNGKING', description: "금성무 양채니 술마시는 곳" },
-                { title: "45-49 Hankow Rd", lat: 22.29770222282687, lng: 114.17092170924607, category: 'CHUNGKING', description: "당시 부산식품 위치 (영화촬영지는 아님)" },
-                { title: "6 Ashely road (My Coffee)", lat: 22.29659730826458, lng: 114.17074509871651, category: 'CHUNGKING', description: "My Coffee (여명, 이가흔, 막문위 만나는 곳)" },
-                { title: "Kwun Tong 觀塘站", lat: 22.312566146965636, lng: 114.22631635282498, category: 'CHUNGKING', description: "쿤통역에서 이가흔이 내리는 장면" },
-                { title: "Energy Plaza 지하", lat: 22.300362862168946, lng: 114.17662093779002, category: 'CHUNGKING', description: "타락천사 금성무가 일하던 꼬치구이가게" },
-                { title: "Ocean Barber Shop & Beauty Salon", lat: 22.296801250427368, lng: 114.1706461052754, category: 'CHUNGKING', description: "두번째 살인 일어난 곳" },
-                { title: "11 Ashley Rd", lat: 22.2967841117307, lng: 114.17030804774447, category: 'CHUNGKING', description: "타락천사 막문위 집" },
-                { title: "홍콩대구장 香港大球場", lat: 22.272909185044217, lng: 114.1886154453367, category: 'CHUNGKING', description: "타락천사 금성무랑 양채니가 간 축구장" },
-                { title: "South China Athletic Association (SCAA) 南華體育會", lat: 22.275174844159505, lng: 114.18701317751437, category: 'CHUNGKING', description: "타락천사 축구장 전 씬" },
-                { title: "32 Spring Garden Ln", lat: 22.275073581969163, lng: 114.17259744907443, category: 'CHUNGKING', description: "타락천사 첫 살인장소" },
-                { title: "완차이 역 灣仔站", lat: 22.277638052130754, lng: 114.17308296256624, category: 'CHUNGKING', description: "타락천사 여명, 이가흔 오프닝신" },
-                { title: "Yue Man Square 裕民坊", lat: 22.31364985273088, lng: 114.22478845767277, category: 'CHUNGKING', description: "킬러 은신처" },
-                { title: "Stanley St", lat: 22.28277843824089, lng: 114.15521261349247, category: 'CHUNGKING', description: "중경삼림 663이 돼지고기 구이밥 먹던 곳" },
-                { title: "Graham Street Market", lat: 22.283076159188198, lng: 114.15352471349244, category: 'CHUNGKING', description: "양조위랑 왕페이 만나는 곳 길거리 식당" },
-                { title: "California Tower 加州大廈", lat: 22.280955638887992, lng: 114.15547320674654, category: 'CHUNGKING', description: "중경삼림 캘리포니아 바" },
-                { title: "Bank of America Tower 美國銀行中心", lat: 22.280804830627428, lng: 114.16313325277932, category: 'CHUNGKING', description: "중경삼림 편의점" },
-                { title: "Harts Preschool 樂希幼兒學校", lat: 22.326462191764385, lng: 114.17014888317226, category: 'CHUNGKING', description: "임청하 금성무 같이 잔 호텔" },
-                { title: "200 Boundary St", lat: 22.3265581822505, lng: 114.17067986587487, category: 'CHUNGKING', description: "중경삼림 금성무 달리기하러 가는 길" },
-                { title: "模漢大廈 (바텀스 업)", lat: 22.296676969973962, lng: 114.17132321475962, category: 'CHUNGKING', description: "중경삼림 바텀스 업" },
-                { title: "尖沙咀站 (침사추이 역)", lat: 22.297776732914627, lng: 114.17215040674624, category: 'CHUNGKING', description: "중경삼림 임청하 쫓기던 침사추이 역" },
-                { title: "McDonald's 麥當勞 (北京道店)", lat: 22.296561906675525, lng: 114.17092257791018, category: 'CHUNGKING', description: "중경삼림 금성무, 타락천사 여명, 막문위 나오는 씬" },
-                { title: "Origami Kids Cafe (카이탁 공항 추정)", lat: 22.307561840026725, lng: 114.21198294443323, category: 'CHUNGKING', description: "아마 카이탁 공항이 있었을 당시 양조위 여친, 택시는 여기서 탔을 것" },
-                { title: "Garden Hostel 花園旅舍", lat: 22.297533853285458, lng: 114.17246787411577, category: 'CHUNGKING', description: "중경삼림 임청하 추격씬 , 추격신 이전장면" },
-                { title: "Chun Kee Stationery Co. Ltd. 春記文具有限公司", lat: 22.297214339618627, lng: 114.17149855092686, category: 'CHUNGKING', description: "왕페이 인형 산 곳" },
+                { title: "ESSO LAM TEI 埃索 藍地油站", lat: 22.42345586569671, lng: 113.98332595829308, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2811, description: { ko: "타락천사 추가엔딩 주유소", jp: "『天使の涙』追加エンディングのガソリンスタンド", en: "Gas station from the alternate ending of 'Fallen Angels'", 'zh-hk': "《墮落天使》追加結局油站" }},
+                { title: "United Centre 統一中心", lat: 22.278609903076784, lng: 114.16593268413227, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2811, description: { ko: "타락천사 추가 엔딩씬", jp: "『天使の涙』追加エンディングシーン", en: "Alternate ending scene of 'Fallen Angels'", 'zh-hk': "《墮落天使》追加結局場景" }},
+                { title: "Pedder Street 畢打街", lat: 22.28202819271243, lng: 114.1572800000013, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2389, description: { ko: "막문위 에이전트 엇갈리는 곳 (近中環站 D1 出口)", jp: "カレン・モクのエージェントとすれ違う場所 (中環駅 D1出口付近)", en: "Where Karen Mok's agent passes by (Near Central Station Exit D1)", 'zh-hk': "莫文蔚經紀人擦身而過的地方 (近中環站 D1 出口)" }},
+                { title: "愛群理髮 Oi Kwan Barber Shop", lat: 22.275620882002876, lng: 114.17280474816528, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 1361, description: { ko: "금성무 이발소 씬", jp: "金城武の理髪店シーン", en: "Takeshi Kaneshiro's barber shop scene", 'zh-hk': "金城武理髮店場景" }},
+                { title: "The Lockhart Bar", lat: 22.27815865897137, lng: 114.17170785443638, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 697, description: { ko: "타락천사 미니버스 씬", jp: "『天使の涙』ミニバスシーン", en: "'Fallen Angels' minibus scene", 'zh-hk': "《墮落天使》小巴場景" }},
+                { title: "Moonkok (Central) 門角 (中環)", lat: 22.282269847274467, lng: 114.15409133544851, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 810, description: { ko: "중경삼림 양조위 집", jp: "『恋する惑星』トニー・レオンの家", en: "Tony Leung's house in 'Chungking Express'", 'zh-hk': "《重慶森林》梁朝偉的家" }},
+                { title: "18 On Lan St", lat: 22.280671057039136, lng: 114.15665048844154, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 41, description: { ko: "금성무가 전여친 메이를 기다리며 깡통찬곳", jp: "金城武が元カノのメイを待ちながら缶を蹴った場所", en: "Where Takeshi Kaneshiro kicked the can while waiting for his ex-girlfriend May", 'zh-hk': "金城武等待前女友May時踢罐頭的地方" }},
+                { title: "Blend & Grind Mid-Levels", lat: 22.280893265289578, lng: 114.15211387520644, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 135, description: { ko: "금성무 전화 씬", jp: "金城武の電話シーン", en: "Takeshi Kaneshiro's phone call scene", 'zh-hk': "金城武打電話場景" }},
+                { title: "6 Humphreys Ave", lat: 22.29847509388113, lng: 114.17319215889565, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1426, description: { ko: "중경삼림 1부 엔딩, 술집 여자 비 올때 문 열어보는 곳", jp: "『恋する惑星』1部エンディング、バーの女性が雨の日にドアを開ける場所", en: "'Chungking Express' Part 1 ending, where the bar woman opens the door when it rains", 'zh-hk': "《重慶森林》第一部結局，酒吧女子下雨天開門的地方" }},
+                { title: "Jashan Celebrating Indian Cuisine", lat: 22.28223316498041, lng: 114.15401775889565, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 810, description: { ko: "중경삼림 양조위 집2 (경찰서 뷰를 보고싶다면)", jp: "『恋する惑星』トニー・レオンの家2 (警察署ビューを見たいなら)", en: "Tony Leung's house view in 'Chungking Express' (If you want to see the police station view)", 'zh-hk': "《重慶森林》梁朝偉的家景觀 (想看警察局景觀的話)" }},
+                { title: "Hollywood Road (outside Post Office) 荷利活道", lat: 22.281622337390928, lng: 114.1548993877317, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 513, description: { ko: "양조위 지나가던 경찰서 앞 버스 정류장 (郵政局外)", jp: "トニー・レオンが通り過ぎた警察署前のバス停 (郵政局外)", en: "Bus stop in front of the police station where Tony Leung passed by (Outside Post Office)", 'zh-hk': "梁朝偉經過的警察局前巴士站 (郵政局外)" }},
+                { title: "Hong Kong China Softball Association 中國香港壘球總會", lat: 22.32227026242013, lng: 114.1853739975534, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1301, description: { ko: "중경삼림 금성무가 달리던 야구장", jp: "『恋する惑星』金城武が走っていた野球場", en: "The baseball field where Takeshi Kaneshiro was running in 'Chungking Express'", 'zh-hk': "《重慶森林》金城武跑步的棒球場" }},
+                { title: "7-Eleven (蘭桂坊店)", lat: 22.28091335416607, lng: 114.15571552453704, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 259, description: { ko: "미드나잇 익스프레스 (7-11便利店)", jp: "ミッドナイト・エクスプレス (7-11便利店)", en: "Midnight Express (7-Eleven)", 'zh-hk': "Midnight Express (7-11便利店)" }},
+                { title: "Yung Kee Tower 鏞記大廈", lat: 22.281426132582393, lng: 114.1557050466272, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 1856, description: { ko: "타락천사 허유산 앞에서 금성무가 전단지 알바하는 장면", jp: "『天使の涙』ホイラウサンの前で金城武がビラ配りのバイトをするシーン", en: "Scene where Takeshi Kaneshiro works part-time handing out flyers in 'Fallen Angels'", 'zh-hk': "《墮落天使》金城武派傳單的場景" }},
+                { title: "Connaught Rd Central", lat: 22.28334445045923, lng: 114.15784781779114, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2629, description: { ko: "타락천사 터널씬1", jp: "『天使の涙』トンネルシーン1", en: "'Fallen Angels' tunnel scene 1", 'zh-hk': "《墮落天使》隧道場景1" }},
+                { title: "Pak Fook Building", lat: 22.274870748731576, lng: 114.1725065545295, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2501, description: { ko: "여명 죽는 레스토랑", jp: "レオン・ライが死ぬレストラン", en: "The restaurant where Leon Lai dies", 'zh-hk': "黎明死去的餐廳" }},
+                { title: "Chungking House 重慶招待所", lat: 22.296553860020964, lng: 114.17240926441836, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 54, description: { ko: "중경삼림 1부 무대, 타락천사 금성무 가족이 운영하는 호스텔", jp: "『恋する惑星』1部の舞台、『天使の涙』金城武の家族が運営するホステル", en: "Setting of 'Chungking Express' Part 1, hostel run by Takeshi Kaneshiro's family in 'Fallen Angels'", 'zh-hk': "《重慶森林》第一部舞台，《墮落天使》金城武家人經營的旅館" }},
+                { title: "Cross Harbour Tunnel", lat: 22.29257830044642, lng: 114.18194020257019, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2629, description: { ko: "타락천사 터널씬2", jp: "『天使の涙』トンネルシーン2", en: "'Fallen Angels' tunnel scene 2", 'zh-hk': "《墮落天使》隧道場景2" }},
+                { title: "K11 ATELIER King's Road", lat: 22.291562695131322, lng: 114.2074883191772, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2571, description: { ko: "금성무랑 암살자 파트너(이가흔) 만나는 음식점", jp: "金城武と殺し屋パートナー(ミシェル・リー)が会う飲食店", en: "The restaurant where Takeshi Kaneshiro meets the assassin partner (Michelle Reis)", 'zh-hk': "金城武與殺手拍檔(李嘉欣)見面的餐廳" }},
+                { title: "자딘 하우스 怡和大廈", lat: 22.284521291616436, lng: 114.15892169070108, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2629, description: { ko: "타락천사 엔딩에 잠깐 나옴", jp: "『天使の涙』エンディングに少し登場", en: "Appears briefly in the ending of 'Fallen Angels'", 'zh-hk': "《墮落天使》結局中短暫出現" }},
+                { title: "26 D'Aguilar St", lat: 22.281147833265514, lng: 114.15566403573631, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 1955, description: { ko: "금성무 양채니 술마시는 곳", jp: "金城武とチャーリー・ヤンが酒を飲む場所", en: "Where Takeshi Kaneshiro and Charlie Yeung drink", 'zh-hk': "金城武和楊采妮喝酒的地方" }},
+                { title: "45-49 Hankow Rd", lat: 22.29770222282687, lng: 114.17092170924607, category: 'CHUNGKING', description: { ko: "당시 부산식품 위치 (영화촬영지는 아님)", jp: "当時の釜山食品の位置 (映画ロケ地ではない)", en: "Location of Busan Foods at the time (Not a filming location)", 'zh-hk': "當時釜山食品位置 (非電影拍攝地)" }},
+                { title: "6 Ashely road (My Coffee)", lat: 22.29659730826458, lng: 114.17074509871651, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2462, description: { ko: "My Coffee (여명, 이가흔, 막문위 만나는 곳)", jp: "My Coffee (レオン・ライ、ミシェル・リー、カレン・モクが会う場所)", en: "My Coffee (Where Leon Lai, Michelle Reis, and Karen Mok meet)", 'zh-hk': "My Coffee (黎明、李嘉欣、莫文蔚見面的地方)" }},
+                { title: "Kwun Tong 觀塘站", lat: 22.312566146965636, lng: 114.22631635282498, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 276, description: { ko: "쿤통역에서 이가흔이 내리는 장면", jp: "観塘駅でミシェル・リーが降りるシーン", en: "Scene where Michelle Reis gets off at Kwun Tong Station", 'zh-hk': "李嘉欣在觀塘站下車的場景" }},
+                { title: "Energy Plaza 지하", lat: 22.300362862168946, lng: 114.17662093779002, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2249, description: { ko: "타락천사 금성무가 일하던 꼬치구이가게", jp: "『天使の涙』金城武が働いていた串焼き屋", en: "The skewer shop where Takeshi Kaneshiro worked in 'Fallen Angels'", 'zh-hk': "《墮落天使》金城武工作的串燒店" }},
+                { title: "Ocean Barber Shop & Beauty Salon", lat: 22.296801250427368, lng: 114.1706461052754, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 1507, description: { ko: "두번째 살인 일어난 곳", jp: "二番目の殺人が起きた場所", en: "Where the second murder took place", 'zh-hk': "發生第二宗謀殺案的地方" }},
+                { title: "11 Ashley Rd", lat: 22.2967841117307, lng: 114.17030804774447, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 1735, description: { ko: "타락천사 막문위 집", jp: "『天使の涙』カレン・モクの家", en: "Karen Mok's house in 'Fallen Angels'", 'zh-hk': "《墮落天使》莫文蔚的家" }},
+                { title: "홍콩대구장 香港大球場", lat: 22.272909185044217, lng: 114.1886154453367, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2031, description: { ko: "타락천사 금성무랑 양채니가 간 축구장", jp: "『天使の涙』金城武とチャーリー・ヤンが行ったサッカー場", en: "The soccer stadium where Takeshi Kaneshiro and Charlie Yeung went in 'Fallen Angels'", 'zh-hk': "《墮落天使》金城武和楊采妮去的足球場" }},
+                { title: "South China Athletic Association (SCAA) 南華體育會", lat: 22.275174844159505, lng: 114.18701317751437, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 2031, description: { ko: "타락천사 축구장 전 씬", jp: "『天使の涙』サッカー場前のシーン", en: "Scene before the soccer stadium in 'Fallen Angels'", 'zh-hk': "《墮落天使》足球場前的場景" }},
+                { title: "32 Spring Garden Ln", lat: 22.275073581969163, lng: 114.17259744907443, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 574, description: { ko: "타락천사 첫 살인장소", jp: "『天使の涙』最初の殺人場所", en: "The first murder location in 'Fallen Angels'", 'zh-hk': "《墮落天使》第一個謀殺地點" }},
+                { title: "완차이 역 灣仔站", lat: 22.277638052130754, lng: 114.17308296256624, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 68, description: { ko: "타락천사 여명, 이가흔 오프닝신", jp: "『天使の涙』レオン・ライ、ミシェル・リーのオープニングシーン", en: "Opening scene of Leon Lai and Michelle Reis in 'Fallen Angels'", 'zh-hk': "《墮落天使》黎明、李嘉欣的開場場景" }},
+                { title: "Yue Man Square 裕民坊", lat: 22.31364985273088, lng: 114.22478845767277, category: 'CHUNGKING', youtube_id: 'uG0R07ReTvg', start_time: 276, description: { ko: "킬러 은신처", jp: "殺し屋の隠れ家", en: "Killer's hideout", 'zh-hk': "殺手藏身處" }},
+                { title: "Stanley St", lat: 22.28277843824089, lng: 114.15521261349247, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 1123, description: { ko: "중경삼림 663이 돼지고기 구이밥 먹던 곳", jp: "『恋する惑星』警官663が豚肉のせご飯を食べた場所", en: "Where Cop 663 ate pork chop rice in 'Chungking Express'", 'zh-hk': "《重慶森林》663吃豬扒飯的地方" }},
+                { title: "Graham Street Market", lat: 22.283076159188198, lng: 114.15352471349244, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 1235, description: { ko: "양조위랑 왕페이 만나는 곳 길거리 식당", jp: "トニー・レオンとフェイ・ウォンが会う場所の屋台", en: "Street stall where Tony Leung and Faye Wong meet", 'zh-hk': "梁朝偉和王菲見面的街邊食檔" }},
+                { title: "California Tower 加州大廈", lat: 22.280955638887992, lng: 114.15547320674654, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 472, description: { ko: "중경삼림 캘리포니아 바", jp: "『恋する惑星』カリフォルニア・バー", en: "'California' Bar in 'Chungking Express'", 'zh-hk': "《重慶森林》California酒吧" }},
+                { title: "Bank of America Tower 美國銀行中心", lat: 22.280804830627428, lng: 114.16313325277932, category: 'CHUNGKING', youtube_id: 'DwwYVQXdRnA', start_time: 1457, description: { ko: "중경삼림 편의점", jp: "『恋する惑星』コンビニエンスストア", en: "Convenience store in 'Chungking Express'", 'zh-hk': "《重慶森林》便利店" }},
+                { title: "Harts Preschool 樂希幼兒學校", lat: 22.326462191764385, lng: 114.17014888317226, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1216, description: { ko: "임청하 금성무 같이 잔 호텔", jp: "ブリジット・リンと金城武が一緒に泊まったホテル", en: "The hotel where Brigitte Lin and Takeshi Kaneshiro stayed together", 'zh-hk': "林青霞和金城武一起住的酒店" }},
+                { title: "200 Boundary St", lat: 22.3265581822505, lng: 114.17067986587487, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1236, description: { ko: "중경삼림 금성무 달리기하러 가는 길", jp: "『恋する惑星』金城武が走りに行く道", en: "The road where Takeshi Kaneshiro goes for a run in 'Chungking Express'", 'zh-hk': "《重慶森林》金城武去跑步的路" }},
+                { title: "模漢大廈 (바텀스 업)", lat: 22.296676969973962, lng: 114.17132321475962, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1107, description: { ko: "중경삼림 바텀스 업", jp: "『恋する惑星』ボトムズアップ・バー", en: "'Bottoms Up' Bar in 'Chungking Express'", 'zh-hk': "《重慶森林》Bottoms Up酒吧" }},
+                { title: "尖沙咀站 (침사추이 역)", lat: 22.297776732914627, lng: 114.17215040674624, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1066, description: { ko: "중경삼림 임청하 쫓기던 침사추이 역", jp: "『恋する惑星』ブリジット・リンが追われていた尖沙咀駅", en: "Tsim Sha Tsui Station where Brigitte Lin was chased in 'Chungking Express'", 'zh-hk': "《重慶森林》林青霞被追趕的尖沙咀站" }},
+                { title: "McDonald's 麥當勞 (北京道店)", lat: 22.296561906675525, lng: 114.17092257791018, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 1012, description: { ko: "중경삼림 금성무, 타락천사 여명, 막문위 나오는 씬", jp: "『恋する惑星』金城武、『天使の涙』レオン・ライ、カレン・モクが登場するシーン", en: "Scene featuring Takeshi Kaneshiro ('Chungking Express'), Leon Lai, and Karen Mok ('Fallen Angels')", 'zh-hk': "《重慶森林》金城武、《墮落天使》黎明、莫文蔚出現的場景" }},
+                { title: "Origami Kids Cafe (카이탁 공항 추정)", lat: 22.307561840026725, lng: 114.21198294443323, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 835, description: { ko: "아마 카이탁 공항이 있었을 당시 양조위 여친, 택시는 여기서 탔을 것", jp: "啓徳空港があった当時、トニー・レオンの彼女がタクシーに乗った場所と推定", en: "Presumably where Tony Leung's girlfriend took a taxi when Kai Tak Airport existed", 'zh-hk': "推測為啟德機場時期，梁朝偉女友搭乘的士的地點" }},
+                { title: "Garden Hostel 花園旅舍", lat: 22.297533853285458, lng: 114.17246787411577, category: 'CHUNGKING', youtube_id: 'tCGeNJcS4b8', start_time: 635, description: { ko: "중경삼림 임청하 추격씬 , 추격신 이전장면", jp: "『恋する惑星』ブリジット・リンの追撃シーン、追撃シーンの前の場面", en: "Brigitte Lin's chase scene and the scene before the chase in 'Chungking Express'", 'zh-hk': "《重慶森林》林青霞追逐戲，以及追逐前場景" }},
+                { title: "Chun Kee Stationery Co. Ltd. 春記文具有限公司", lat: 22.297214339618627, lng: 114.17149855092686, category: 'CHUNGKING', youtube_id: 'LxPY--KAnU0', start_time: 183, description: { ko: "왕페이 인형 산 곳", jp: "フェイ・ウォンが人形を買った場所", en: "Where Faye Wong bought the stuffed animal", 'zh-hk': "王菲買公仔的地方" }},
 
                 // [영웅본색1] (ABT1) - 16개
-                { title: "Aberdeen Marina Club 深灣遊艇會", lat: 22.247206363525223, lng: 114.16329629313545, category: 'ABT1', description: "초반에 주윤발 적룡 위조지폐 거래 장면" },
-                { title: "TOWNPLACE PROMENADE 건너편", lat: 22.328872561959894, lng: 114.14824649313546, category: 'ABT1', description: "이 건너편 섬이 최종 싸움 & 장국영 적룡 만난곳" },
-                { title: "Fire Services Department Diving Base 消防處潛水基地", lat: 22.326311072966355, lng: 114.14254984350612, category: 'ABT1', description: "마지막 전투" },
-                { title: "Pedder Building 畢打行", lat: 22.28285645261476, lng: 114.15676730669519, category: 'ABT1', description: "여기서 전화받고 뛰어가는 장국영" },
-                { title: "Former Hilton Hotel Hong Kong 香港希爾頓酒店舊址", lat: 22.2802291205314, lng: 114.16042964412507, category: 'ABT1', description: "처음에 차타고 이동할때 나오는 장면" },
-                { title: "Natural Plus (오프닝 도로)", lat: 22.280267198160516, lng: 114.1655733764704, category: 'ABT1', description: "오프닝 달리는 도로" },
-                { title: "Yuk Wong Kwun Yim Kam Kwong Temple 玉皇觀音金剛普救廟", lat: 22.341883612551587, lng: 114.21552249143022, category: 'ABT1', description: "주윤발과 적룡이 자동차 주차시키고 야경 보며 얘기하는 장면" },
-                { title: "Tin Hau Temple, Joss House Bay 佛堂門天后古廟", lat: 22.27172728867906, lng: 114.28970850793962, category: 'ABT1', description: "주윤발과 적룡이 디스크를 미끼로 조직을 불러낸 곳" },
-                { title: "Collinson St", lat: 22.286189220104863, lng: 114.13182810106694, category: 'ABT1', description: "디스크 탈취 관련 공중전화 장면" },
-                { title: "Aubin House 安邦商業大廈", lat: 22.28056780366958, lng: 114.17794184490663, category: 'ABT1', description: "이 건물 옥상에서 주윤발이 끌려가서 맞음" },
-                { title: "Wo Hop Shek Public Cemetery 和合石墳場", lat: 22.47591248958508, lng: 114.13862064551311, category: 'ABT1', description: "장국영 묘지 장면" },
-                { title: "Saint Paul's Convent 聖保祿修院", lat: 22.27781152996258, lng: 114.18716450793963, category: 'ABT1', description: "초반에 장국영과 적룡 아버지 병원에서 장난치는 곳" },
-                { title: "Merit Industrial Centre", lat: 22.319208103227126, lng: 114.19145378466088, category: 'ABT1', description: "주윤발 주차장 밥먹는 장면, 초반 조직 아지트 주차장, 디스크 탈취 후 전투 씬" },
-                { title: "황후상 광장 皇后像廣場", lat: 22.281914129940617, lng: 114.15994164603785, category: 'ABT1', description: "맨 처음 주윤발 등장 씬" },
-                { title: "Tai Kwun 大館", lat: 22.282033262383266, lng: 114.15406224387563, category: 'ABT1', description: "아주 잠깐 자막과 함께 나왔지만 실제로 장국영이 있던곳은 다른 곳" },
-                { title: "5 Hoi Ping Rd", lat: 22.278336390997534, lng: 114.18461739259537, category: 'ABT1', description: "주윤발이 절뚝거리며 자동차 닦는 장면" },
+                { title: "Aberdeen Marina Club 深灣遊艇會", lat: 22.247206363525223, lng: 114.16329629313545, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 696, description: { ko: "초반에 주윤발 적룡 위조지폐 거래 장면", jp: "序盤でチョウ・ユンファとティ・ロンが偽札取引をするシーン", en: "Early scene where Chow Yun-fat and Ti Lung trade counterfeit money", 'zh-hk': "開頭周潤發和狄龍交易偽鈔的場景" }},
+                { title: "TOWNPLACE PROMENADE 건너편", lat: 22.328872561959894, lng: 114.14824649313546, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 2080, description: { ko: "이 건너편 섬이 최종 싸움 & 장국영 적룡 만난곳", jp: "この向かい側の島が最終決戦＆レスリー・チャンとティ・ロンが会った場所", en: "The island across here is where the final fight took place & where Leslie Cheung and Ti Lung met", 'zh-hk': "對面島嶼是最終決戰及張國榮狄龍見面地點" }},
+                { title: "Fire Services Department Diving Base 消防處潛水基地", lat: 22.326311072966355, lng: 114.14254984350612, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 2080, description: { ko: "마지막 전투", jp: "最後の戦闘", en: "The final battle", 'zh-hk': "最後的戰鬥" }},
+                { title: "Pedder Building 畢打行", lat: 22.28285645261476, lng: 114.15676730669519, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1031, description: { ko: "여기서 전화받고 뛰어가는 장국영", jp: "ここで電話を受けて走り出すレスリー・チャン", en: "Leslie Cheung running after receiving a phone call here", 'zh-hk': "張國榮在這裡接電話後跑出去" }},
+                { title: "Former Hilton Hotel Hong Kong 香港希爾頓酒店舊址", lat: 22.2802291205314, lng: 114.16042964412507, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 608, description: { ko: "처음에 차타고 이동할때 나오는 장면", jp: "最初に車で移動する時に出てくるシーン", en: "Scene appearing during the initial car ride", 'zh-hk': "開頭乘車移動時出現的場景" }},
+                { title: "Natural Plus (오프닝 도로)", lat: 22.280267198160516, lng: 114.1655733764704, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 608, description: { ko: "오프닝 달리는 도로", jp: "オープニングで走る道路", en: "The road running in the opening", 'zh-hk': "開場奔跑的道路" }},
+                { title: "Yuk Wong Kwun Yim Kam Kwong Temple 玉皇觀音金剛普救廟", lat: 22.341883612551587, lng: 114.21552249143022, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1480, description: { ko: "주윤발과 적룡이 자동차 주차시키고 야경 보며 얘기하는 장면", jp: "チョウ・ユンファとティ・ロンが車を停めて夜景を見ながら話すシーン", en: "Scene where Chow Yun-fat and Ti Lung park the car and talk while looking at the night view", 'zh-hk': "周潤發和狄龍停車後看夜景交談的場景" }},
+                { title: "Tin Hau Temple, Joss House Bay 佛堂門天后古廟", lat: 22.27172728867906, lng: 114.28970850793962, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1660, description: { ko: "주윤발과 적룡이 디스크를 미끼로 조직을 불러낸 곳", jp: "チョウ・ユンファとティ・ロンがディスクを餌に組織を呼び出した場所", en: "Where Chow Yun-fat and Ti Lung lured the organization using the disk as bait", 'zh-hk': "周潤發和狄龍以磁碟為誘餌引出組織的地方" }},
+                { title: "Collinson St", lat: 22.286189220104863, lng: 114.13182810106694, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1626, description: { ko: "디스크 탈취 관련 공중전화 장면", jp: "ディスク奪取関連の公衆電話シーン", en: "Public phone scene related to the disk snatch", 'zh-hk': "與奪取磁碟相關的公共電話場景" }},
+                { title: "Aubin House 安邦商業大廈", lat: 22.28056780366958, lng: 114.17794184490663, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1392, description: { ko: "이 건물 옥상에서 주윤발이 끌려가서 맞음", jp: "このビルの屋上でチョウ・ユンファが連れて行かれて殴られる", en: "Chow Yun-fat gets dragged and beaten on the rooftop of this building", 'zh-hk': "周潤發在這棟樓的屋頂被抓走毆打" }},
+                { title: "Wo Hop Shek Public Cemetery 和合石墳場", lat: 22.47591248958508, lng: 114.13862064551311, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1164, description: { ko: "장국영 묘지 장면", jp: "レスリー・チャンの墓地シーン", en: "Leslie Cheung's cemetery scene", 'zh-hk': "張國榮墓地場景" }},
+                { title: "Saint Paul's Convent 聖保祿修院", lat: 22.27781152996258, lng: 114.18716450793963, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 769, description: { ko: "초반에 장국영과 적룡 아버지 병원에서 장난치는 곳", jp: "序盤でレスリー・チャンとティ・ロンの父が病院でふざけ合う場所", en: "Where Leslie Cheung and Ti Lung's father play around in the hospital at the beginning", 'zh-hk': "開頭張國榮和狄龍父親在醫院玩耍的地方" }},
+                { title: "Merit Industrial Centre", lat: 22.319208103227126, lng: 114.19145378466088, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 170, description: { ko: "주윤발 주차장 밥먹는 장면, 초반 조직 아지트 주차장, 디스크 탈취 후 전투 씬", jp: "チョウ・ユンファが駐車場で食事するシーン、序盤の組織アジト駐車場、ディスク奪取後の戦闘シーン", en: "Chow Yun-fat eating in the parking lot, early organization hideout parking lot, battle scene after disk snatch", 'zh-hk': "周潤發在停車場吃飯場景，開頭組織據點停車場，奪取磁碟後戰鬥場景" }},
+                { title: "황후상 광장 皇后像廣場", lat: 22.281914129940617, lng: 114.15994164603785, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 48, description: { ko: "맨 처음 주윤발 등장 씬", jp: "最初のチョウ・ユンファ登場シーン", en: "The very first appearance scene of Chow Yun-fat", 'zh-hk': "周潤發首次登場場景" }},
+                { title: "Tai Kwun 大館", lat: 22.282033262383266, lng: 114.15406224387563, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1073, description: { ko: "아주 잠깐 자막과 함께 나왔지만 실제로 장국영이 있던곳은 다른 곳", jp: "ごく短く字幕と共に出たが、実際にレスリー・チャンがいた場所は別", en: "Appeared briefly with subtitles, but the actual place where Leslie Cheung was is different", 'zh-hk': "短暫出現並帶有字幕，但張國榮實際所在位置不同" }},
+                { title: "5 Hoi Ping Rd", lat: 22.278336390997534, lng: 114.18461739259537, category: 'ABT1', youtube_id: 'KrVry17idZs', start_time: 1310, description: { ko: "주윤발이 절뚝거리며 자동차 닦는 장면", jp: "チョウ・ユンファが足を引きずりながら車を拭くシーン", en: "Scene where Chow Yun-fat limps and wipes the car", 'zh-hk': "周潤發跛腳擦車的場景" }},
 
                 // [도둑들] (THIEVES) - 6개
-                { title: "Tai Pak Floating Restaurant (폐업)", lat: 22.244018684525685, lng: 114.1616134427633, category: 'THIEVES', description: "한국 도둑들과 홍콩 도둑들이 처음으로 만나는 곳" },
-                { title: "Hung Hom Ferry Pier 紅磡渡輪碼頭", lat: 22.301229189737086, lng: 114.1903924767799, category: 'THIEVES', description: "김윤석이 변장을 풀던 곳" },
-                { title: "Aberdeen Marina Club Car Park 深灣遊艇會停車場", lat: 22.24453637326389, lng: 114.16476118650883, category: 'THIEVES', description: "이정재가 염탐하던 곳" },
-                { title: "하버 그랜드 구룡 九龍海逸君綽酒店", lat: 22.30281115161621, lng: 114.19240083743503, category: 'THIEVES', description: "엔딩의 전지현, 김혜수가 만나던 곳" },
-                { title: "Kowloon City Street View (스타하우스)", lat: 22.329006159631238, lng: 114.18810352023834, category: 'THIEVES', description: "당시 스타하우스라고 불리던, 도둑들의 홍콩거처" },
-                { title: "Central Pier No.9 中環9號碼頭", lat: 22.28615915634227, lng: 114.16248914418094, category: 'THIEVES', description: "처음에 홍콩 도둑들끼리 얘기하는 장면" },
+                { title: "Tai Pak Floating Restaurant (폐업)", lat: 22.244018684525685, lng: 114.1616134427633, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 112, description: { ko: "한국 도둑들과 홍콩 도둑들이 처음으로 만나는 곳", jp: "韓国の泥棒たちと香港の泥棒たちが初めて会う場所", en: "Where the Korean thieves and Hong Kong thieves first meet", 'zh-hk': "韓國盜賊和香港盜賊首次見面的地方" }},
+                { title: "Hung Hom Ferry Pier 紅磡渡輪碼頭", lat: 22.301229189737086, lng: 114.1903924767799, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 361, description: { ko: "김윤석이 변장을 풀던 곳", jp: "キム・ユンソクが変装を解いた場所", en: "Where Kim Yoon-seok removed his disguise", 'zh-hk': "金允錫解除偽裝的地方" }},
+                { title: "Aberdeen Marina Club Car Park 深灣遊艇會停車場", lat: 22.24453637326389, lng: 114.16476118650883, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 206, description: { ko: "이정재가 염탐하던 곳", jp: "イ・ジョンジェが偵察していた場所", en: "Where Lee Jung-jae was spying", 'zh-hk': "李政宰偵察的地方" }},
+                { title: "하버 그랜드 구룡 九龍海逸君綽酒店", lat: 22.30281115161621, lng: 114.19240083743503, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 485, description: { ko: "엔딩의 전지현, 김혜수가 만나던 곳", jp: "エンディングでチョン・ジヒョン、キム・ヘスが会っていた場所", en: "Where Jun Ji-hyun and Kim Hye-soo met in the ending", 'zh-hk': "結局中全智賢和金憓秀見面的地方" }},
+                { title: "Kowloon City Street View (스타하우스)", lat: 22.329006159631238, lng: 114.18810352023834, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 273, description: { ko: "당시 스타하우스라고 불리던, 도둑들의 홍콩거처", jp: "当時スターハウスと呼ばれていた、泥棒たちの香港の拠点", en: "The thieves' Hong Kong base, called Star House at the time", 'zh-hk': "當時被稱為Star House，盜賊們的香港據點" }},
+                { title: "Central Pier No.9 中環9號碼頭", lat: 22.28615915634227, lng: 114.16248914418094, category: 'THIEVES', youtube_id: 'RLwBzIkzpqc', start_time: 33, description: { ko: "처음에 홍콩 도둑들끼리 얘기하는 장면", jp: "最初に香港の泥棒たち同士で話すシーン", en: "The scene where the Hong Kong thieves talk amongst themselves at the beginning", 'zh-hk': "開頭香港盜賊們交談的場景" }},
 
                 // [영웅본색2] (ABT2) - 6개
-                { title: "St. Raphael's Catholic Cemetery 天主教聖辣法厄爾墳場", lat: 22.349831733991785, lng: 114.14571694076294, category: 'ABT2', description: "용사의 딸이 묻힌 곳" },
-                { title: "French International School 法國國際學校(小學部)", lat: 22.267307273307242, lng: 114.1899352376231, category: 'ABT2', description: "장국영 여친 면접 (Jardine's Lookout Campus)" },
-                { title: "Graduate Law Centre", lat: 22.281318826251358, lng: 114.16279323317676, category: 'ABT2', description: "차타고 지나는 장면에서 나옴" },
-                { title: "Spiral Staircase 旋轉樓梯", lat: 22.28058456713742, lng: 114.1612062220336, category: 'ABT2', description: "오프닝 오우삼 이름 뜰때" },
-                { title: "Banoo Villa Block 3", lat: 22.219760963098338, lng: 114.2153614191809, category: 'ABT2', description: "악당들 아지트" },
-                { title: "Stubbs Road Lookout 司徒拔道瞭望處", lat: 22.27138394804498, lng: 114.17536238519075, category: 'ABT2', description: "장국영 공중전화 장면" },
+                // '용사의 딸' -> '석천의 딸'로 설명 수정됨
+                { title: "St. Raphael's Catholic Cemetery 天主教聖辣法厄爾墳場", lat: 22.349831733991785, lng: 114.14571694076294, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 1919, description: { ko: "석천의 딸이 묻힌 곳", jp: "ディーン・セキの娘が埋葬された場所", en: "Where Dean Shek's daughter is buried", 'zh-hk': "石天的女兒安葬的地方" }},
+                { title: "French International School 法國國際學校(小學部)", lat: 22.267307273307242, lng: 114.1899352376231, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 857, description: { ko: "장국영 여친 면접 (Jardine's Lookout Campus)", jp: "レスリー・チャンの彼女の面接 (Jardine's Lookout Campus)", en: "Leslie Cheung's girlfriend's interview (Jardine's Lookout Campus)", 'zh-hk': "張國榮女友面試 (Jardine's Lookout Campus)" }},
+                { title: "Graduate Law Centre", lat: 22.281318826251358, lng: 114.16279323317676, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 608, description: { ko: "차타고 지나는 장면에서 나옴", jp: "車で通り過ぎるシーンで登場", en: "Appears in the scene passing by car", 'zh-hk': "乘車經過的場景中出現" }},
+                { title: "Spiral Staircase 旋轉樓梯", lat: 22.28058456713742, lng: 114.1612062220336, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 608, description: { ko: "오프닝 오우삼 이름 뜰때", jp: "オープニングでジョン・ウーの名前が出る時", en: "When John Woo's name appears in the opening", 'zh-hk': "開場出現吳宇森名字時" }},
+                { title: "Banoo Villa Block 3", lat: 22.219760963098338, lng: 114.2153614191809, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 2080, description: { ko: "악당들 아지트", jp: "悪党たちのアジト", en: "Villains' hideout", 'zh-hk': "反派據點" }},
+                { title: "Stubbs Road Lookout 司徒拔道瞭望處", lat: 22.27138394804498, lng: 114.17536238519075, category: 'ABT2', youtube_id: 'KrVry17idZs', start_time: 2193, description: { ko: "장국영 공중전화 장면", jp: "レスリー・チャンの公衆電話シーン", en: "Leslie Cheung's public phone scene", 'zh-hk': "張國榮公共電話場景" }},
 
                 // [첨밀밀] (COMRADES) - 27개
-                { title: "644 Nathan Rd (학원)", lat: 22.318629875299983, lng: 114.1696673280852, category: 'COMRADES', description: "여명이 다니고 장만옥이 일하던 학원" },
-                { title: "淺草廊", lat: 22.325960198315997, lng: 114.1692922355823, category: 'COMRADES', description: "여명 아내 태워다준 곳" },
-                { title: "Chivas Godown Company Limited 柴灣貨倉", lat: 22.271762413719223, lng: 114.24576000859865, category: 'COMRADES', description: "장만옥 밀항한 곳" },
-                { title: "7 Minden Ave", lat: 22.296987897830125, lng: 114.17416626260797, category: 'COMRADES', description: "도일커플 배웅장면" },
-                { title: "Bowring St & Kwun Chung St", lat: 22.304242756742905, lng: 114.16865396741818, category: 'COMRADES', description: "닭고기 배달 장면" },
-                { title: "Genki Sushi (Silvercord) 元気寿司 (新港中心)", lat: 22.297922277793884, lng: 114.1694504619716, category: 'COMRADES', description: "초반 자전거 장면" },
-                { title: "VIPSTATION 名人站", lat: 22.298138859345283, lng: 114.17083308895523, category: 'COMRADES', description: "고모집" },
-                { title: "The Kowloon Hotel", lat: 22.29589177022503, lng: 114.1718769000003, category: 'COMRADES', description: "등려군 싸인 받는 곳" },
-                { title: "HSBC Tsim Sha Tsui Branch 滙豐尖沙咀分行", lat: 22.2988851508944, lng: 114.1722616288364, category: 'COMRADES', description: "자전거 배달하는 곳" },
-                { title: "The Sun Arcade 新太陽廣場", lat: 22.296636469986918, lng: 114.1695345000003, category: 'COMRADES', description: "자전거 장면" },
-                { title: "Universal Dragon Investments Limited (U-Accessories)", lat: 22.295473670358678, lng: 114.17103131779129, category: 'COMRADES', description: "자동차 경적 울리는 장면" },
-                { title: "33號 Nathan Rd (귀금속 점)", lat: 22.296392526679863, lng: 114.17199527116419, category: 'COMRADES', description: "선물 사는 귀금속 점" },
-                { title: "Mody House", lat: 22.29708331657827, lng: 114.1745072932544, category: 'COMRADES', description: "설날 아내에게 전화거는 장면" },
-                { title: "SABON NATHAN ROAD", lat: 22.29928490590167, lng: 114.17223277546346, category: 'COMRADES', description: "자전거 씬 첫부분" },
-                { title: "Yolanda Bakery", lat: 22.304909593419403, lng: 114.16918596441836, category: 'COMRADES', description: "닭고기 배달 장면" },
-                { title: "Pret A Manger (기차역)", lat: 22.303358948504375, lng: 114.18144941779107, category: 'COMRADES', description: "첫장면 기차역" },
-                { title: "Takshing Terrace", lat: 22.303584686122576, lng: 114.17326942471158, category: 'COMRADES', description: "여명 장만옥 부두 장면 바로 직전" },
-                { title: "실버코드 新港中心", lat: 22.297366089916306, lng: 114.16942772536424, category: 'COMRADES', description: "캔톤로드 자전거 첨밀밀 노래부르면서 가는 장면" },
-                { title: "Shanghai St & Bowring St (ATM)", lat: 22.304263479547913, lng: 114.16914262478812, category: 'COMRADES', description: "ATM 기 위치, 잔고 확인 장면" },
-                { title: "頤東酒家 Eton Restaurant", lat: 22.324940856932855, lng: 114.16718070105973, category: 'COMRADES', description: "여명 개업한 식당" },
-                { title: "西醫黃錫明 (랑함플레이스)", lat: 22.31975876636224, lng: 114.16813633368409, category: 'COMRADES', description: "차 끌고 이동한 곳" },
-                { title: "Modell Fashions & Love Light Tailors", lat: 22.299082633057854, lng: 114.17345222167081, category: 'COMRADES', description: "콘돔 사는 곳" },
-                { title: "Häagen-Dazs 哈根達斯", lat: 22.29669283105657, lng: 114.17215372410426, category: 'COMRADES', description: "차끌고 이동 장면" },
-                { title: "Moreton Terrace Temporary Playground 摩頓臺臨時遊樂場硬地足球場", lat: 22.279559386962653, lng: 114.18993772023836, category: 'COMRADES', description: "배구공 던져주는 장면" },
-                { title: "51-55 Wan Chai Rd", lat: 22.27599600165404, lng: 114.17446012023835, category: 'COMRADES', description: "닭고기집 면접" },
-                { title: "Tse Sui Luen 謝瑞麟", lat: 22.2993446279714, lng: 114.17176688465638, category: 'COMRADES', description: "길거리 춤추는 장면" },
-                { title: "Evangelical Free Church of China (EFCC) 中國基督教播道會天泉堂", lat: 22.32516372318005, lng: 114.17051732579566, category: 'COMRADES', description: "여명 처 내려주는 곳 반대편" }
+                { title: "644 Nathan Rd (학원)", lat: 22.318629875299983, lng: 114.1696673280852, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 420, description: { ko: "여명이 다니고 장만옥이 일하던 학원", jp: "レオン・ライが通い、マギー・チャンが働いていた塾", en: "The academy where Leon Lai attended and Maggie Cheung worked", 'zh-hk': "黎明就讀、張曼玉工作的補習社" }},
+                { title: "淺草廊", lat: 22.325960198315997, lng: 114.1692922355823, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 1142, description: { ko: "여명 아내 태워다준 곳", jp: "レオン・ライが妻を送っていった場所", en: "Where Leon Lai dropped off his wife", 'zh-hk': "黎明送妻子的地方" }},
+                { title: "Chivas Godown Company Limited 柴灣貨倉", lat: 22.271762413719223, lng: 114.24576000859865, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 1465, description: { ko: "장만옥 밀항한 곳", jp: "マギー・チャンが密航した場所", en: "Where Maggie Cheung smuggled herself", 'zh-hk': "張曼玉偷渡的地方" }},
+                { title: "7 Minden Ave", lat: 22.296987897830125, lng: 114.17416626260797, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 867, description: { ko: "도일커플 배웅장면", jp: "ドイルカップル見送りシーン", en: "Doyle couple farewell scene", 'zh-hk': "杜可風情侶送別場景" }},
+                { title: "Bowring St & Kwun Chung St", lat: 22.304242756742905, lng: 114.16865396741818, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 253, description: { ko: "닭고기 배달 장면", jp: "鶏肉配達シーン", en: "Chicken delivery scene", 'zh-hk': "送雞肉場景" }},
+                { title: "Genki Sushi (Silvercord) 元気寿司 (新港中心)", lat: 22.297922277793884, lng: 114.1694504619716, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 645, description: { ko: "초반 자전거 장면", jp: "序盤の自転車シーン", en: "Early bicycle scene", 'zh-hk': "開頭單車場景" }},
+                { title: "VIPSTATION 名人站", lat: 22.298138859345283, lng: 114.17083308895523, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 165, description: { ko: "고모집", jp: "叔母の家", en: "Aunt's house", 'zh-hk': "姑媽的家" }},
+                { title: "The Kowloon Hotel", lat: 22.29589177022503, lng: 114.1718769000003, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 1233, description: { ko: "등려군 싸인 받는 곳", jp: "テレサ・テンのサインをもらう場所", en: "Where they get Teresa Teng's autograph", 'zh-hk': "獲得鄧麗君簽名的地方" }},
+                { title: "HSBC Tsim Sha Tsui Branch 滙豐尖沙咀分行", lat: 22.2988851508944, lng: 114.1722616288364, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 253, description: { ko: "자전거 배달하는 곳", jp: "自転車で配達する場所", en: "Where they deliver by bicycle", 'zh-hk': "騎單車送貨的地方" }},
+                { title: "The Sun Arcade 新太陽廣場", lat: 22.296636469986918, lng: 114.1695345000003, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 645, description: { ko: "자전거 장면", jp: "自転車シーン", en: "Bicycle scene", 'zh-hk': "單車場景" }},
+                { title: "Universal Dragon Investments Limited (U-Accessories)", lat: 22.295473670358678, lng: 114.17103131779129, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 1233, description: { ko: "자동차 경적 울리는 장면", jp: "車のクラクションが鳴るシーン", en: "Scene where the car horn honks", 'zh-hk': "汽車鳴喇叭的場景" }},
+                { title: "33號 Nathan Rd (귀금속 점)", lat: 22.296392526679863, lng: 114.17199527116419, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 982, description: { ko: "선물 사는 귀금속 점", jp: "プレゼントを買う貴金属店", en: "Jewelry store where they buy gifts", 'zh-hk': "購買禮物的珠寶店" }},
+                { title: "Mody House", lat: 22.29708331657827, lng: 114.1745072932544, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 945, description: { ko: "설날 아내에게 전화거는 장면", jp: "旧正月に妻に電話をかけるシーン", en: "Scene calling his wife on Lunar New Year's Day", 'zh-hk': "農曆新年打電話給妻子的場景" }},
+                { title: "SABON NATHAN ROAD", lat: 22.29928490590167, lng: 114.17223277546346, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 645, description: { ko: "자전거 씬 첫부분", jp: "自転車シーンの最初の部分", en: "The beginning of the bicycle scene", 'zh-hk': "單車場景的開始部分" }},
+                { title: "Yolanda Bakery", lat: 22.304909593419403, lng: 114.16918596441836, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 253, description: { ko: "닭고기 배달 장면", jp: "鶏肉配達シーン", en: "Chicken delivery scene", 'zh-hk': "送雞肉場景" }},
+                { title: "Pret A Manger (기차역)", lat: 22.303358948504375, lng: 114.18144941779107, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 67, description: { ko: "첫장면 기차역", jp: "最初のシーンの駅", en: "The train station in the first scene", 'zh-hk': "第一幕的火車站" }},
+                { title: "Takshing Terrace", lat: 22.303584686122576, lng: 114.17326942471158, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 1378, description: { ko: "여명 장만옥 부두 장면 바로 직전", jp: "レオン・ライとマギー・チャンの埠頭シーンの直前", en: "Right before the pier scene of Leon Lai and Maggie Cheung", 'zh-hk': "黎明和張曼玉碼頭場景之前" }},
+                { title: "실버코드 新港中心", lat: 22.297366089916306, lng: 114.16942772536424, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 645, description: { ko: "캔톤로드 자전거 첨밀밀 노래부르면서 가는 장면", jp: "広東ロードを自転車で『甜蜜蜜』を歌いながら行くシーン", en: "Scene riding a bicycle on Canton Road while singing 'Tian Mi Mi'", 'zh-hk': "在廣東道騎單車唱著《甜蜜蜜》的場景" }},
+                { title: "Shanghai St & Bowring St (ATM)", lat: 22.304263479547913, lng: 114.16914262478812, category: 'COMRADES', youtube_id: 'kW2QQ3yfgIc', start_time: 805, description: { ko: "ATM 기 위치, 잔고 확인 장면", jp: "ATM機の位置、残高確認シーン", en: "ATM location, balance check scene", 'zh-hk': "ATM位置，查詢餘額場景" }},
+                { title: "頤東酒家 Eton Restaurant", lat: 22.324940856932855, lng: 114.16718070105973, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 382, description: { ko: "여명 개업한 식당", jp: "レオン・ライが開業したレストラン", en: "The restaurant opened by Leon Lai", 'zh-hk': "黎明開設的餐廳" }},
+                { title: "西醫黃錫明 (랑함플레이스)", lat: 22.31975876636224, lng: 114.16813633368409, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 243, description: { ko: "차 끌고 이동한 곳", jp: "車で移動した場所", en: "Where they drove to", 'zh-hk': "駕車前往的地方" }},
+                { title: "Modell Fashions & Love Light Tailors", lat: 22.299082633057854, lng: 114.17345222167081, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 651, description: { ko: "콘돔 사는 곳", jp: "コンドームを買う場所", en: "Where they buy condoms", 'zh-hk': "購買避孕套的地方" }},
+                { title: "Häagen-Dazs 哈根達斯", lat: 22.29669283105657, lng: 114.17215372410426, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 609, description: { ko: "차끌고 이동 장면", jp: "車で移動するシーン", en: "Driving scene", 'zh-hk': "駕車移動場景" }},
+                { title: "Moreton Terrace Temporary Playground 摩頓臺臨時遊樂場硬地足球場", lat: 22.279559386962653, lng: 114.18993772023836, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 746, description: { ko: "배구공 던져주는 장면", jp: "バレーボールを投げてあげるシーン", en: "Scene throwing the volleyball", 'zh-hk': "投擲排球的場景" }},
+                { title: "51-55 Wan Chai Rd", lat: 22.27599600165404, lng: 114.17446012023835, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 687, description: { ko: "닭고기집 면접", jp: "鶏肉店の面接", en: "Chicken shop interview", 'zh-hk': "雞肉店面試" }},
+                { title: "Tse Sui Luen 謝瑞麟", lat: 22.2993446279714, lng: 114.17176688465638, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 128, description: { ko: "길거리 춤추는 장면", jp: "路上で踊るシーン", en: "Street dancing scene", 'zh-hk': "街頭跳舞場景" }},
+                { title: "Evangelical Free Church of China (EFCC) 中國基督教播道會天泉堂", lat: 22.32516372318005, lng: 114.17051732579566, category: 'COMRADES', youtube_id: 'Vp390EViYJ4', start_time: 27, description: { ko: "여명 처 내려주는 곳 반대편", jp: "レオン・ライが妻を降ろす場所の反対側", en: "Opposite side of where Leon Lai drops off his wife", 'zh-hk': "黎明送妻子下車處的對面" }},
+
+                 // [죠죠의 기묘한 모험] (JOJO) - 1개
+                { title: "Haw Par Mansion 虎豹別墅", lat: 22.275613260428443, lng: 114.19535537302593, category: 'JOJO', youtube_id: 'kGZAdbooOKo', start_time: 0, description: { ko: "폴나레프와 압둘이 싸운 곳", jp: "ポルナレフとアヴドゥルが戦った場所", en: "Where Polnareff and Avdol fought", 'zh-hk': "波魯那雷夫和阿布德爾戰鬥的地方" }}
             ];
 
 
@@ -476,19 +534,40 @@
                     const translation = translations[currentLang];
                     const categoryName = translation.categories[loc.category];
 
+                    // 현재 언어에 맞는 설명 가져오기 (없으면 한국어)
+                    const currentDescription = loc.description[currentLang] || loc.description['ko'];
+
                     // 상세 설명
-                    const locationDescription = loc.description ? `<p style="margin-top: 8px; font-size: 14px; font-weight: normal; color: #333;">${loc.description}</p>` : '';
+                    const locationDescription = currentDescription ? `<p style="margin-top: 8px; font-size: 14px; font-weight: normal; color: #333;">${currentDescription}</p>` : '';
 
-                    // 길찾기 링크 추가
-                    const directionsLink = `<p style="margin-top: 15px; font-size: 12px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}" target="_blank">${translation.details}</a></p>`;
+                    // 길찾기 링크
+                    const directionsLink = `<p style="margin-top: 10px; font-size: 12px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}" target="_blank">${translation.details}</a></p>`;
 
-                    // 유튜브 클립 (원본 데이터에 없으므로 생략)
+                    // 유튜브 영상 삽입 로직 (데이터가 있는 경우에만)
+                    let youtubeEmbed = '';
+                    if (loc.youtube_id) {
+                        const videoId = loc.youtube_id;
+                        const startTime = loc.start_time || 0; // 시작 시간이 없으면 0초
+                        // YouTube URL에 ?start=시간(초) 파라미터를 추가하여 시작 시간 지정
+                        youtubeEmbed = `
+                            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                                <h4 style="margin: 0 0 8px 0; color: #CC0000;">${translation.youtube_title}</h4>
+                                <iframe width="280" height="157"
+                                    src="https://www.youtube.com/embed/${videoId}?start=${startTime}"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        `;
+                    }
 
                     infoWindow.setContent(`
-                        <div style="font-family: Arial, sans-serif; max-width: 300px; padding: 5px;">
+                        <div style="font-family: Arial, sans-serif; padding: 5px;">
                             <h4 style="margin: 0 0 5px 0; color: #CC0000;">[${categoryName}]</h4>
                             <h3 style="margin: 0;">${loc.title}</h3>
                             ${locationDescription}
+                            ${youtubeEmbed}
                             ${directionsLink}
                         </div>
                     `);
@@ -510,9 +589,9 @@
             listPanel.innerHTML = '';
             legendDiv.innerHTML = '';
 
-            // 1. 범례 (Legend) 추가 (영화 카테고리만 표시)
+            // 1. 범례 (Legend) 추가
             // 표시 순서 지정
-            const categoriesToDisplay = ['CHUNGKING', 'ABT1', 'THIEVES', 'ABT2', 'COMRADES'];
+            const categoriesToDisplay = ['CHUNGKING', 'ABT1', 'THIEVES', 'ABT2', 'COMRADES', 'JOJO'];
             categoriesToDisplay.forEach(key => {
                 const config = CATEGORIES[key];
                 const legendItem = document.createElement('div');
@@ -541,8 +620,12 @@
                 const iconColor = CATEGORIES[loc.category].color;
                 const categoryName = translation.categories[loc.category];
 
-                // 목록 아이콘
-                const iconHtml = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${iconColor}; margin-right:8px; vertical-align: top; margin-top: 4px; border: 1px solid #666;"></span>`;
+                // 현재 언어에 맞는 설명 가져오기 (없으면 한국어)
+                const currentDescription = loc.description[currentLang] || loc.description['ko'];
+
+                // 목록 아이콘 (노란색은 테두리 강조)
+                const borderColor = (loc.category === 'JOJO') ? '#999' : '#666';
+                const iconHtml = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${iconColor}; margin-right:8px; vertical-align: top; margin-top: 4px; border: 1px solid ${borderColor};"></span>`;
 
                 // 목록 텍스트 (제목과 카테고리/설명) - UI 개선을 위해 Flexbox 사용
                 listItem.innerHTML = `
@@ -551,7 +634,7 @@
                         <div style="flex: 1;">
                             <strong>${loc.title}</strong>
                             <br>
-                            <span style="color:#777; font-size:12px;">(${categoryName}) - ${loc.description}</span>
+                            <span style="color:#777; font-size:12px;">(${categoryName}) - ${currentDescription}</span>
                         </div>
                     </div>
                 `;
