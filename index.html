@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>홍콩본색이 다녀온 영화촬영지</title>
+    <style>
+        /* UI 깨짐 방지를 위해 box-sizing을 border-box로 설정 */
+        * {
+            box-sizing: border-box;
+        }
+        /* 기본 스타일 및 헤더 */
+        body {
+            font-family: 'Arial Black', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFFFFF;
+            color: #333333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            width: 100%;
+            background-color: #CC0000;
+            color: #FFFFFF;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        h1 { margin: 0; font-size: 3.5em; letter-spacing: 2px; text-transform: uppercase; }
+        h2 { margin-top: 10px; font-size: 1.5em; font-weight: normal; }
+
+        /* 지도와 목록 컨테이너 */
+        .map-container {
+            display: flex;
+            width: 95%;
+            max-width: 1400px;
+            height: 75vh; /* 화면 높이에 맞춰 조정 */
+            min-height: 600px;
+            margin: 40px 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border: 5px solid #CC0000;
+        }
+        #map { flex-basis: 70%; height: 100%; }
+
+        /* 목록 패널 스타일 */
+        #list-panel {
+            flex-basis: 30%;
+            background-color: #f5f5f5;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+        #list-panel h3 { color: #CC0000; margin-top: 0; padding-bottom: 5px; border-bottom: 2px solid #ccc; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-weight: bold; }
+        /* 범례 아이콘에 테두리를 추가하여 시인성 향상 */
+        .legend-icon { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #666; }
+        .location-item { padding: 8px 5px; cursor: pointer; border-bottom: 1px dashed #cccccc; }
+        .location-item:hover { background-color: #e0e0e0; }
+        .location-item:last-child { border-bottom: none; }
+
+        /* 언어 선택 버튼 스타일 */
+        #language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+        }
+        #language-selector button {
+            background-color: #FFFFFF;
+            color: #CC0000;
+            border: 1px solid #CC0000;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+        #language-selector button.active,
+        #language-selector button:hover {
+            background-color: #CC0000;
+            color: #FFFFFF;
+        }
+
+        /* 푸터 */
+        footer {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            background-color: #CC0000;
+            color: #FFFFFF;
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div id="language-selector">
+            <button data-lang="ko" class="active" onclick="switchLanguage('ko', this)">한국어</button>
+            <button data-lang="jp" onclick="switchLanguage('jp', this)">日本語</button>
+            <button data-lang="en" onclick="switchLanguage('en', this)">English</button>
+            <button data-lang="zh-hk" onclick="switchLanguage('zh-hk', this)">廣東話</button>
+        </div>
+        <h1 id="header-title">홍콩본색이 다녀온 영화촬영지</h1>
+        <h2 id="header-subtitle">총 99개 홍콩 영화 속 필름 로케 후보지</h2>
+    </header>
+
+    <div class="map-container">
+        <div id="map"></div>
+        <div id="list-panel">
+            <h3 id="legend-title">영화 촬영지 목록</h3>
+            <div id="legend">
+                </div>
+
+            <h3 id="list-header" style="margin-top: 20px;">로케이션 목록 (총 99개)</h3>
+            <div id="location-list">
+                </div>
+        </div>
+    </div>
+
+    <footer>
+        <p id="footer-text">© 2025 홍콩본색. All Rights Reserved.</p>
+    </footer>
+
+    <div id="map-script-container"></div>
+
+    <script>
+        let map;
+        let infoWindow;
+        let service;
+        let currentMarker = null;
+        let activeMarkers = [];
+        let currentLang = 'ko';
+        const API_KEY = "AIzaSyA8iM2FvVwK37oTKyDpmoPTuPylBErGRlU"; // Google Maps API Key
+        const TOTAL_LOCATIONS = 99; // 총 로케이션 수 (99개로 확인됨)
+
+        // ----------------------------------------------------
+        // 1. 다국어 텍스트 데이터 (불필요한 카테고리 제거됨)
+        // ----------------------------------------------------
+        const translations = {
+            'ko': {
+                title: "홍콩본색이 다녀온 영화촬영지", subtitle: `총 ${TOTAL_LOCATIONS}개 홍콩 영화 속 필름 로케 후보지`, legend: "영화 촬영지 목록", list_header: `로케이션 목록 (총 ${TOTAL_LOCATIONS}개)`, footer: "© 2025 홍콩본색. All Rights Reserved.",
+                find_place: "찾아낸 장소: ", no_place: "여긴 등록된 장소가 없네!", details: "Google 지도에서 길찾기",
+                categories: {
+                    'ABT1': '영웅본색 1', 'CHUNGKING': '중경삼림 & 타락천사',
+                    'THIEVES': '도둑들', 'ABT2': '영웅본색 2', 'COMRADES': '첨밀밀'
+                },
+                mapLangCode: 'ko'
+            },
+            'jp': {
+                title: "香港本色が訪れた映画ロケ地", subtitle: `全${TOTAL_LOCATIONS}か所の香港映画ロケ候補地`, legend: "映画撮影地リスト", list_header: `ロケーション一覧 (全${TOTAL_LOCATIONS}か所)`, footer: "© 2025 香港本色. All Rights Reserved.",
+                find_place: "見つけた場所: ", no_place: "ここは登録されていません！", details: "Googleマップでルート検索",
+                categories: {
+                    'ABT1': '男たちの挽歌', 'CHUNGKING': '恋する惑星 & 天使の涙',
+                    'THIEVES': '泥棒たち', 'ABT2': '男たちの挽歌 2', 'COMRADES': 'ラブソング'
+                },
+                mapLangCode: 'ja'
+            },
+            'en': {
+                title: "Hongkong Noir Film Locations", subtitle: `${TOTAL_LOCATIONS} Hong Kong Film Location Candidates`, legend: "Film Location List", list_header: `Location List (Total ${TOTAL_LOCATIONS})`, footer: "© 2025 Hongkong Bonsak. All Rights Reserved.",
+                find_place: "Found Place: ", no_place: "No registered place here!", details: "Get Directions on Google Maps",
+                categories: {
+                    'ABT1': 'A Better Tomorrow', 'CHUNGKING': 'Chungking & Fallen Angels',
+                    'THIEVES': 'The Thieves', 'ABT2': 'A Better Tomorrow 2', 'COMRADES': 'Comrades, Almost a Love Story'
+                },
+                mapLangCode: 'en'
+            },
+            'zh-hk': {
+                title: "香港本色到訪的電影取景地", subtitle: `共${TOTAL_LOCATIONS}個香港電影取景地候選地點`, legend: "電影取景地清單", list_header: `地點列表 (共${TOTAL_LOCATIONS}個)`, footer: "© 2025 香港本色 版權所有",
+                find_place: "找到的地點: ", no_place: "這裡沒有註冊地點！", details: "在 Google 地圖上規劃路線",
+                categories: {
+                    'ABT1': '英雄本色', 'CHUNGKING': '重慶森林 & 墮落天使',
+                    'THIEVES': '盜賊門', 'ABT2': '英雄本色 2', 'COMRADES': '甜蜜蜜'
+                },
+                mapLangCode: 'zh-HK'
+            }
+        };
+
+        // ----------------------------------------------------
+        // 2. 지도 API 스크립트를 로드하는 함수
+        // ----------------------------------------------------
+        function loadMapScript(langCode) {
+            const scriptContainer = document.getElementById('map-script-container');
+            // 언어 변경 시 맵을 새로 로드하기 위해 기존 스크립트 정리
+            scriptContainer.innerHTML = '';
+             if (window.google && window.google.maps) {
+                 // Forcefully remove the script if it exists to ensure language change
+                 document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(s => s.remove());
+                 delete window.google.maps;
+            }
+
+            const script = document.createElement('script');
+            script.async = true;
+            script.defer = true;
+
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places&language=${langCode}&callback=initMap`;
+
+            document.head.appendChild(script);
+        }
+
+        // ----------------------------------------------------
+        // 3. 주요 로직 함수 및 데이터 (색상 지정)
+        // ----------------------------------------------------
+        const CATEGORIES = {
+            'ABT1': { color: '#000000' },      // 영웅본색1 (검정)
+            'CHUNGKING': { color: '#CC0000' }, // 중경삼림 & 타락천사 (빨강)
+            'THIEVES': { color: '#8B4513' },   // 도둑들 (갈색)
+            'ABT2': { color: '#A9A9A9' },      // 영웅본색2 (회색 - DarkGray)
+            'COMRADES': { color: '#1E90FF' }   // 첨밀밀 (파랑 - DodgerBlue)
+        };
+
+        window.initMap = function() {
+            const HONG_KONG_BOUNDS = { north: 22.56, south: 22.15, west: 113.80, east: 114.50 };
+
+            if (!document.getElementById("map")) return;
+
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 22.3027, lng: 114.1712 }, // 침사추이 중심
+                zoom: 13,
+                minZoom: 11,
+                maxZoom: 19,
+                restriction: { latLngBounds: HONG_KONG_BOUNDS, strictBounds: false },
+                mapTypeControl: false, fullscreenControl: true, streetViewControl: true, zoomControl: true,
+                gestureHandling: 'greedy',
+                styles: [
+                    // POI(관심 지점) 라벨을 단순화하여 지도 가독성 향상
+                    { featureType: "poi.business", elementType: "labels", stylers: [{ visibility: "off" }] },
+                    { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                    { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "simplified" }] }
+                ]
+            });
+
+            service = new google.maps.places.PlacesService(map);
+            infoWindow = new google.maps.InfoWindow();
+
+            activeMarkers = addExportedMarkers();
+
+            populateListPanel(activeMarkers);
+
+            // 지도 클릭 이벤트 (참고용 위치 확인)
+            map.addListener("click", (mapsMouseEvent) => {
+                const latLng = mapsMouseEvent.latLng;
+
+                if (currentMarker) {
+                    currentMarker.setMap(null);
+                }
+                infoWindow.close();
+
+                // 클릭한 위치에 임시 마커 표시
+                currentMarker = new google.maps.Marker({
+                    position: latLng,
+                    map: map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: '#FFD700', // Bright Yellow
+                        fillOpacity: 0.8,
+                        strokeColor: '#CC0000', // Red border
+                        strokeWeight: 2,
+                        scale: 10,
+                    },
+                    zIndex: 9999 // 항상 위에 표시
+                });
+
+                getPlaceDetails(latLng);
+            });
+        }
+
+        // 초기 맵 로드 스크립트 호출 (기본 언어 'ko')
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMapScript(translations[currentLang].mapLangCode);
+        });
+
+        function switchLanguage(lang, element) {
+            if (currentLang === lang) return;
+            currentLang = lang;
+            const langCode = translations[lang].mapLangCode;
+
+            document.querySelectorAll('#language-selector button').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            // 텍스트 업데이트
+            document.getElementById('header-title').innerText = translations[lang].title;
+            document.getElementById('header-subtitle').innerText = translations[lang].subtitle;
+            document.getElementById('legend-title').innerText = translations[lang].legend;
+            document.getElementById('list-header').innerText = translations[lang].list_header;
+            document.getElementById('footer-text').innerText = translations[lang].footer;
+
+            // 맵 스크립트 다시 로드 (언어 변경 적용)
+            loadMapScript(langCode);
+        }
+
+        function getMarkerIcon(category) {
+            const config = CATEGORIES[category] || CATEGORIES['CHUNGKING']; // 기본값 설정
+
+            return {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: config.color,
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF', // 가시성을 위해 흰색 테두리 추가
+                strokeWeight: 1.5,
+                scale: 8,
+            };
+        }
+
+        // 지도 클릭 시 주변 장소 정보 가져오기 (참고용 기능)
+        function getPlaceDetails(latLng) {
+            const request = { location: latLng, radius: 50 };
+            service.nearbySearch(request, (results, status) => {
+                let contentString = "";
+                const translation = translations[currentLang];
+
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    const place = results[0];
+                    // 임시 마커 클릭 시에는 장소 보기 링크 제공
+                    const detailsLink = `<a href="https://www.google.com/maps/search/?api=1&query=${latLng.lat()},${latLng.lng()}&query_place_id=${place.place_id}" target="_blank">View on Google Maps</a>`;
+
+                    contentString = `
+                        <div style="font-family: Arial, sans-serif; padding: 5px;">
+                            <strong>${translation.find_place}</strong><br>
+                            <h4 style="margin: 5px 0;">${place.name}</h4>
+                            <p style="font-size: 12px;">${place.vicinity || "N/A"}</p>
+                            ${detailsLink}
+                        </div>
+                    `;
+                } else {
+                    contentString = `
+                        <div style="font-family: Arial, sans-serif; padding: 5px;">
+                            <strong>${translation.no_place}</strong><br>
+                            <p style="font-size: 12px;">Lat: ${latLng.lat().toFixed(5)}, Lng: ${latLng.lng().toFixed(5)}</p>
+                        </div>
+                    `;
+                }
+                infoWindow.setContent(contentString);
+                infoWindow.open(map, currentMarker);
+            });
+        }
+
+        // 제공된 데이터를 기반으로 마커를 추가하는 함수
+        function addExportedMarkers() {
+            // ** 제공된 원본 리스트를 기준으로 데이터를 재구성했습니다. (총 99개) **
+            const exportedLocations = [
+                // [중경삼림 & 타락천사] (CHUNGKING) - 44개
+                { title: "ESSO LAM TEI 埃索 藍地油站", lat: 22.42345586569671, lng: 113.98332595829308, category: 'CHUNGKING', description: "타락천사 추가엔딩 주유소" },
+                { title: "United Centre 統一中心", lat: 22.278609903076784, lng: 114.16593268413227, category: 'CHUNGKING', description: "타락천사 추가 엔딩씬" },
+                { title: "Pedder Street 畢打街", lat: 22.28202819271243, lng: 114.1572800000013, category: 'CHUNGKING', description: "막문위 에이전트 엇갈리는 곳 (近中環站 D1 出口)" },
+                { title: "愛群理髮 Oi Kwan Barber Shop", lat: 22.275620882002876, lng: 114.17280474816528, category: 'CHUNGKING', description: "금성무 이발소 씬" },
+                { title: "The Lockhart Bar", lat: 22.27815865897137, lng: 114.17170785443638, category: 'CHUNGKING', description: "타락천사 미니버스 씬" },
+                { title: "Moonkok (Central) 門角 (中環)", lat: 22.282269847274467, lng: 114.15409133544851, category: 'CHUNGKING', description: "중경삼림 양조위 집" },
+                { title: "18 On Lan St", lat: 22.280671057039136, lng: 114.15665048844154, category: 'CHUNGKING', description: "금성무가 전여친 메이를 기다리며 깡통찬곳" },
+                { title: "Blend & Grind Mid-Levels", lat: 22.280893265289578, lng: 114.15211387520644, category: 'CHUNGKING', description: "금성무 전화 씬" },
+                { title: "6 Humphreys Ave", lat: 22.29847509388113, lng: 114.17319215889565, category: 'CHUNGKING', description: "중경삼림 1부 엔딩, 술집 여자 비 올때 문 열어보는 곳" },
+                { title: "Jashan Celebrating Indian Cuisine", lat: 22.28223316498041, lng: 114.15401775889565, category: 'CHUNGKING', description: "중경삼림 양조위 집2 (경찰서 뷰를 보고싶다면)" },
+                { title: "Hollywood Road (outside Post Office) 荷利活道", lat: 22.281622337390928, lng: 114.1548993877317, category: 'CHUNGKING', description: "양조위 지나가던 경찰서 앞 버스 정류장 (郵政局外)" },
+                { title: "Hong Kong China Softball Association 中國香港壘球總會", lat: 22.32227026242013, lng: 114.1853739975534, category: 'CHUNGKING', description: "중경삼림 금성무가 달리던 야구장" },
+                { title: "7-Eleven (蘭桂坊店)", lat: 22.28091335416607, lng: 114.15571552453704, category: 'CHUNGKING', description: "미드나잇 익스프레스 (7-11便利店)" },
+                { title: "Yung Kee Tower 鏞記大廈", lat: 22.281426132582393, lng: 114.1557050466272, category: 'CHUNGKING', description: "타락천사 허라우산 앞에서 금성무가 전단지 알바하는 장면" },
+                { title: "Connaught Rd Central", lat: 22.28334445045923, lng: 114.15784781779114, category: 'CHUNGKING', description: "타락천사 터널씬1" },
+                { title: "Pak Fook Building", lat: 22.274870748731576, lng: 114.1725065545295, category: 'CHUNGKING', description: "여명 죽는 레스토랑" },
+                { title: "Chungking House 重慶招待所", lat: 22.296553860020964, lng: 114.17240926441836, category: 'CHUNGKING', description: "중경삼림 1부 무대, 타락천사 금성무 가족이 운영하는 호스텔" },
+                { title: "Cross Harbour Tunnel", lat: 22.29257830044642, lng: 114.18194020257019, category: 'CHUNGKING', description: "타락천사 터널씬2" },
+                { title: "K11 ATELIER King's Road", lat: 22.291562695131322, lng: 114.2074883191772, category: 'CHUNGKING', description: "금성무랑 암살자 파트너(이가흔) 만나는 음식점" },
+                { title: "자딘 하우스 怡和大廈", lat: 22.284521291616436, lng: 114.15892169070108, category: 'CHUNGKING', description: "타락천사 엔딩에 잠깐 나옴" },
+                { title: "26 D'Aguilar St", lat: 22.281147833265514, lng: 114.15566403573631, category: 'CHUNGKING', description: "금성무 양채니 술마시는 곳" },
+                { title: "45-49 Hankow Rd", lat: 22.29770222282687, lng: 114.17092170924607, category: 'CHUNGKING', description: "당시 부산식품 위치 (영화촬영지는 아님)" },
+                { title: "6 Ashely road (My Coffee)", lat: 22.29659730826458, lng: 114.17074509871651, category: 'CHUNGKING', description: "My Coffee (여명, 이가흔, 막문위 만나는 곳)" },
+                { title: "Kwun Tong 觀塘站", lat: 22.312566146965636, lng: 114.22631635282498, category: 'CHUNGKING', description: "쿤통역에서 이가흔이 내리는 장면" },
+                { title: "Energy Plaza 지하", lat: 22.300362862168946, lng: 114.17662093779002, category: 'CHUNGKING', description: "타락천사 금성무가 일하던 꼬치구이가게" },
+                { title: "Ocean Barber Shop & Beauty Salon", lat: 22.296801250427368, lng: 114.1706461052754, category: 'CHUNGKING', description: "두번째 살인 일어난 곳" },
+                { title: "11 Ashley Rd", lat: 22.2967841117307, lng: 114.17030804774447, category: 'CHUNGKING', description: "타락천사 막문위 집" },
+                { title: "홍콩대구장 香港大球場", lat: 22.272909185044217, lng: 114.1886154453367, category: 'CHUNGKING', description: "타락천사 금성무랑 양채니가 간 축구장" },
+                { title: "South China Athletic Association (SCAA) 南華體育會", lat: 22.275174844159505, lng: 114.18701317751437, category: 'CHUNGKING', description: "타락천사 축구장 전 씬" },
+                { title: "32 Spring Garden Ln", lat: 22.275073581969163, lng: 114.17259744907443, category: 'CHUNGKING', description: "타락천사 첫 살인장소" },
+                { title: "완차이 역 灣仔站", lat: 22.277638052130754, lng: 114.17308296256624, category: 'CHUNGKING', description: "타락천사 여명, 이가흔 오프닝신" },
+                { title: "Yue Man Square 裕民坊", lat: 22.31364985273088, lng: 114.22478845767277, category: 'CHUNGKING', description: "킬러 은신처" },
+                { title: "Stanley St", lat: 22.28277843824089, lng: 114.15521261349247, category: 'CHUNGKING', description: "중경삼림 663이 돼지고기 구이밥 먹던 곳" },
+                { title: "Graham Street Market", lat: 22.283076159188198, lng: 114.15352471349244, category: 'CHUNGKING', description: "양조위랑 왕페이 만나는 곳 길거리 식당" },
+                { title: "California Tower 加州大廈", lat: 22.280955638887992, lng: 114.15547320674654, category: 'CHUNGKING', description: "중경삼림 캘리포니아 바" },
+                { title: "Bank of America Tower 美國銀行中心", lat: 22.280804830627428, lng: 114.16313325277932, category: 'CHUNGKING', description: "중경삼림 편의점" },
+                { title: "Harts Preschool 樂希幼兒學校", lat: 22.326462191764385, lng: 114.17014888317226, category: 'CHUNGKING', description: "임청하 금성무 같이 잔 호텔" },
+                { title: "200 Boundary St", lat: 22.3265581822505, lng: 114.17067986587487, category: 'CHUNGKING', description: "중경삼림 금성무 달리기하러 가는 길" },
+                { title: "模漢大廈 (바텀스 업)", lat: 22.296676969973962, lng: 114.17132321475962, category: 'CHUNGKING', description: "중경삼림 바텀스 업" },
+                { title: "尖沙咀站 (침사추이 역)", lat: 22.297776732914627, lng: 114.17215040674624, category: 'CHUNGKING', description: "중경삼림 임청하 쫓기던 침사추이 역" },
+                { title: "McDonald's 麥當勞 (北京道店)", lat: 22.296561906675525, lng: 114.17092257791018, category: 'CHUNGKING', description: "중경삼림 금성무, 타락천사 여명, 막문위 나오는 씬" },
+                { title: "Origami Kids Cafe (카이탁 공항 추정)", lat: 22.307561840026725, lng: 114.21198294443323, category: 'CHUNGKING', description: "아마 카이탁 공항이 있었을 당시 양조위 여친, 택시는 여기서 탔을 것" },
+                { title: "Garden Hostel 花園旅舍", lat: 22.297533853285458, lng: 114.17246787411577, category: 'CHUNGKING', description: "중경삼림 임청하 추격씬 , 추격신 이전장면" },
+                { title: "Chun Kee Stationery Co. Ltd. 春記文具有限公司", lat: 22.297214339618627, lng: 114.17149855092686, category: 'CHUNGKING', description: "왕페이 인형 산 곳" },
+
+                // [영웅본색1] (ABT1) - 16개
+                { title: "Aberdeen Marina Club 深灣遊艇會", lat: 22.247206363525223, lng: 114.16329629313545, category: 'ABT1', description: "초반에 주윤발 적룡 위조지폐 거래 장면" },
+                { title: "TOWNPLACE PROMENADE 건너편", lat: 22.328872561959894, lng: 114.14824649313546, category: 'ABT1', description: "이 건너편 섬이 최종 싸움 & 장국영 적룡 만난곳" },
+                { title: "Fire Services Department Diving Base 消防處潛水基地", lat: 22.326311072966355, lng: 114.14254984350612, category: 'ABT1', description: "마지막 전투" },
+                { title: "Pedder Building 畢打行", lat: 22.28285645261476, lng: 114.15676730669519, category: 'ABT1', description: "여기서 전화받고 뛰어가는 장국영" },
+                { title: "Former Hilton Hotel Hong Kong 香港希爾頓酒店舊址", lat: 22.2802291205314, lng: 114.16042964412507, category: 'ABT1', description: "처음에 차타고 이동할때 나오는 장면" },
+                { title: "Natural Plus (오프닝 도로)", lat: 22.280267198160516, lng: 114.1655733764704, category: 'ABT1', description: "오프닝 달리는 도로" },
+                { title: "Yuk Wong Kwun Yim Kam Kwong Temple 玉皇觀音金剛普救廟", lat: 22.341883612551587, lng: 114.21552249143022, category: 'ABT1', description: "주윤발과 적룡이 자동차 주차시키고 야경 보며 얘기하는 장면" },
+                { title: "Tin Hau Temple, Joss House Bay 佛堂門天后古廟", lat: 22.27172728867906, lng: 114.28970850793962, category: 'ABT1', description: "주윤발과 적룡이 디스크를 미끼로 조직을 불러낸 곳" },
+                { title: "Collinson St", lat: 22.286189220104863, lng: 114.13182810106694, category: 'ABT1', description: "디스크 탈취 관련 공중전화 장면" },
+                { title: "Aubin House 安邦商業大廈", lat: 22.28056780366958, lng: 114.17794184490663, category: 'ABT1', description: "이 건물 옥상에서 주윤발이 끌려가서 맞음" },
+                { title: "Wo Hop Shek Public Cemetery 和合石墳場", lat: 22.47591248958508, lng: 114.13862064551311, category: 'ABT1', description: "장국영 묘지 장면" },
+                { title: "Saint Paul's Convent 聖保祿修院", lat: 22.27781152996258, lng: 114.18716450793963, category: 'ABT1', description: "초반에 장국영과 적룡 아버지 병원에서 장난치는 곳" },
+                { title: "Merit Industrial Centre", lat: 22.319208103227126, lng: 114.19145378466088, category: 'ABT1', description: "주윤발 주차장 밥먹는 장면, 초반 조직 아지트 주차장, 디스크 탈취 후 전투 씬" },
+                { title: "황후상 광장 皇后像廣場", lat: 22.281914129940617, lng: 114.15994164603785, category: 'ABT1', description: "맨 처음 주윤발 등장 씬" },
+                { title: "Tai Kwun 大館", lat: 22.282033262383266, lng: 114.15406224387563, category: 'ABT1', description: "아주 잠깐 자막과 함께 나왔지만 실제로 장국영이 있던곳은 다른 곳" },
+                { title: "5 Hoi Ping Rd", lat: 22.278336390997534, lng: 114.18461739259537, category: 'ABT1', description: "주윤발이 절뚝거리며 자동차 닦는 장면" },
+
+                // [도둑들] (THIEVES) - 6개
+                { title: "Tai Pak Floating Restaurant (폐업)", lat: 22.244018684525685, lng: 114.1616134427633, category: 'THIEVES', description: "한국 도둑들과 홍콩 도둑들이 처음으로 만나는 곳" },
+                { title: "Hung Hom Ferry Pier 紅磡渡輪碼頭", lat: 22.301229189737086, lng: 114.1903924767799, category: 'THIEVES', description: "김윤석이 변장을 풀던 곳" },
+                { title: "Aberdeen Marina Club Car Park 深灣遊艇會停車場", lat: 22.24453637326389, lng: 114.16476118650883, category: 'THIEVES', description: "이정재가 염탐하던 곳" },
+                { title: "하버 그랜드 구룡 九龍海逸君綽酒店", lat: 22.30281115161621, lng: 114.19240083743503, category: 'THIEVES', description: "엔딩의 전지현, 김혜수가 만나던 곳" },
+                { title: "Kowloon City Street View (스타하우스)", lat: 22.329006159631238, lng: 114.18810352023834, category: 'THIEVES', description: "당시 스타하우스라고 불리던, 도둑들의 홍콩거처" },
+                { title: "Central Pier No.9 中環9號碼頭", lat: 22.28615915634227, lng: 114.16248914418094, category: 'THIEVES', description: "처음에 홍콩 도둑들끼리 얘기하는 장면" },
+
+                // [영웅본색2] (ABT2) - 6개
+                { title: "St. Raphael's Catholic Cemetery 天主教聖辣法厄爾墳場", lat: 22.349831733991785, lng: 114.14571694076294, category: 'ABT2', description: "용사의 딸이 묻힌 곳" },
+                { title: "French International School 法國國際學校(小學部)", lat: 22.267307273307242, lng: 114.1899352376231, category: 'ABT2', description: "장국영 여친 면접 (Jardine's Lookout Campus)" },
+                { title: "Graduate Law Centre", lat: 22.281318826251358, lng: 114.16279323317676, category: 'ABT2', description: "차타고 지나는 장면에서 나옴" },
+                { title: "Spiral Staircase 旋轉樓梯", lat: 22.28058456713742, lng: 114.1612062220336, category: 'ABT2', description: "오프닝 오우삼 이름 뜰때" },
+                { title: "Banoo Villa Block 3", lat: 22.219760963098338, lng: 114.2153614191809, category: 'ABT2', description: "악당들 아지트" },
+                { title: "Stubbs Road Lookout 司徒拔道瞭望處", lat: 22.27138394804498, lng: 114.17536238519075, category: 'ABT2', description: "장국영 공중전화 장면" },
+
+                // [첨밀밀] (COMRADES) - 27개
+                { title: "644 Nathan Rd (학원)", lat: 22.318629875299983, lng: 114.1696673280852, category: 'COMRADES', description: "여명이 다니고 장만옥이 일하던 학원" },
+                { title: "淺草廊", lat: 22.325960198315997, lng: 114.1692922355823, category: 'COMRADES', description: "여명 아내 태워다준 곳" },
+                { title: "Chivas Godown Company Limited 柴灣貨倉", lat: 22.271762413719223, lng: 114.24576000859865, category: 'COMRADES', description: "장만옥 밀항한 곳" },
+                { title: "7 Minden Ave", lat: 22.296987897830125, lng: 114.17416626260797, category: 'COMRADES', description: "도일커플 배웅장면" },
+                { title: "Bowring St & Kwun Chung St", lat: 22.304242756742905, lng: 114.16865396741818, category: 'COMRADES', description: "닭고기 배달 장면" },
+                { title: "Genki Sushi (Silvercord) 元気寿司 (新港中心)", lat: 22.297922277793884, lng: 114.1694504619716, category: 'COMRADES', description: "초반 자전거 장면" },
+                { title: "VIPSTATION 名人站", lat: 22.298138859345283, lng: 114.17083308895523, category: 'COMRADES', description: "고모집" },
+                { title: "The Kowloon Hotel", lat: 22.29589177022503, lng: 114.1718769000003, category: 'COMRADES', description: "등려군 싸인 받는 곳" },
+                { title: "HSBC Tsim Sha Tsui Branch 滙豐尖沙咀分行", lat: 22.2988851508944, lng: 114.1722616288364, category: 'COMRADES', description: "자전거 배달하는 곳" },
+                { title: "The Sun Arcade 新太陽廣場", lat: 22.296636469986918, lng: 114.1695345000003, category: 'COMRADES', description: "자전거 장면" },
+                { title: "Universal Dragon Investments Limited (U-Accessories)", lat: 22.295473670358678, lng: 114.17103131779129, category: 'COMRADES', description: "자동차 경적 울리는 장면" },
+                { title: "33號 Nathan Rd (귀금속 점)", lat: 22.296392526679863, lng: 114.17199527116419, category: 'COMRADES', description: "선물 사는 귀금속 점" },
+                { title: "Mody House", lat: 22.29708331657827, lng: 114.1745072932544, category: 'COMRADES', description: "설날 아내에게 전화거는 장면" },
+                { title: "SABON NATHAN ROAD", lat: 22.29928490590167, lng: 114.17223277546346, category: 'COMRADES', description: "자전거 씬 첫부분" },
+                { title: "Yolanda Bakery", lat: 22.304909593419403, lng: 114.16918596441836, category: 'COMRADES', description: "닭고기 배달 장면" },
+                { title: "Pret A Manger (기차역)", lat: 22.303358948504375, lng: 114.18144941779107, category: 'COMRADES', description: "첫장면 기차역" },
+                { title: "Takshing Terrace", lat: 22.303584686122576, lng: 114.17326942471158, category: 'COMRADES', description: "여명 장만옥 부두 장면 바로 직전" },
+                { title: "실버코드 新港中心", lat: 22.297366089916306, lng: 114.16942772536424, category: 'COMRADES', description: "캔톤로드 자전거 첨밀밀 노래부르면서 가는 장면" },
+                { title: "Shanghai St & Bowring St (ATM)", lat: 22.304263479547913, lng: 114.16914262478812, category: 'COMRADES', description: "ATM 기 위치, 잔고 확인 장면" },
+                { title: "頤東酒家 Eton Restaurant", lat: 22.324940856932855, lng: 114.16718070105973, category: 'COMRADES', description: "여명 개업한 식당" },
+                { title: "西醫黃錫明 (랑함플레이스)", lat: 22.31975876636224, lng: 114.16813633368409, category: 'COMRADES', description: "차 끌고 이동한 곳" },
+                { title: "Modell Fashions & Love Light Tailors", lat: 22.299082633057854, lng: 114.17345222167081, category: 'COMRADES', description: "콘돔 사는 곳" },
+                { title: "Häagen-Dazs 哈根達斯", lat: 22.29669283105657, lng: 114.17215372410426, category: 'COMRADES', description: "차끌고 이동 장면" },
+                { title: "Moreton Terrace Temporary Playground 摩頓臺臨時遊樂場硬地足球場", lat: 22.279559386962653, lng: 114.18993772023836, category: 'COMRADES', description: "배구공 던져주는 장면" },
+                { title: "51-55 Wan Chai Rd", lat: 22.27599600165404, lng: 114.17446012023835, category: 'COMRADES', description: "닭고기집 면접" },
+                { title: "Tse Sui Luen 謝瑞麟", lat: 22.2993446279714, lng: 114.17176688465638, category: 'COMRADES', description: "길거리 춤추는 장면" },
+                { title: "Evangelical Free Church of China (EFCC) 中國基督教播道會天泉堂", lat: 22.32516372318005, lng: 114.17051732579566, category: 'COMRADES', description: "여명 처 내려주는 곳 반대편" }
+            ];
+
+
+            const markers = [];
+            exportedLocations.forEach(loc => {
+                const marker = new google.maps.Marker({
+                    position: { lat: loc.lat, lng: loc.lng },
+                    map: map,
+                    title: loc.title,
+                    icon: getMarkerIcon(loc.category)
+                });
+
+                marker.addListener("click", () => {
+                    // 임시 마커가 있다면 제거
+                    if (currentMarker) {
+                        currentMarker.setMap(null);
+                        currentMarker = null;
+                    }
+
+                    infoWindow.close();
+                    const translation = translations[currentLang];
+                    const categoryName = translation.categories[loc.category];
+
+                    // 상세 설명
+                    const locationDescription = loc.description ? `<p style="margin-top: 8px; font-size: 14px; font-weight: normal; color: #333;">${loc.description}</p>` : '';
+
+                    // 길찾기 링크 추가
+                    const directionsLink = `<p style="margin-top: 15px; font-size: 12px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}" target="_blank">${translation.details}</a></p>`;
+
+                    // 유튜브 클립 (원본 데이터에 없으므로 생략)
+
+                    infoWindow.setContent(`
+                        <div style="font-family: Arial, sans-serif; max-width: 300px; padding: 5px;">
+                            <h4 style="margin: 0 0 5px 0; color: #CC0000;">[${categoryName}]</h4>
+                            <h3 style="margin: 0;">${loc.title}</h3>
+                            ${locationDescription}
+                            ${directionsLink}
+                        </div>
+                    `);
+                    infoWindow.open(map, marker);
+                    map.panTo(marker.getPosition());
+                });
+
+                markers.push({ data: loc, marker: marker });
+            });
+
+            return markers;
+        }
+
+        // 리스트 패널을 채우는 함수
+        function populateListPanel(markers) {
+            const listPanel = document.getElementById('location-list');
+            const legendDiv = document.getElementById('legend');
+            const translation = translations[currentLang];
+            listPanel.innerHTML = '';
+            legendDiv.innerHTML = '';
+
+            // 1. 범례 (Legend) 추가 (영화 카테고리만 표시)
+            // 표시 순서 지정
+            const categoriesToDisplay = ['CHUNGKING', 'ABT1', 'THIEVES', 'ABT2', 'COMRADES'];
+            categoriesToDisplay.forEach(key => {
+                const config = CATEGORIES[key];
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+
+                const iconColor = config.color;
+
+                legendItem.innerHTML = `
+                    <div class="legend-icon" style="background-color: ${iconColor};"></div>
+                    <span>${translation.categories[key]}</span>
+                `;
+                legendDiv.appendChild(legendItem);
+            });
+
+            // 2. 장소 목록 (List) 추가 (카테고리별, 제목순 정렬)
+            const sortedMarkers = markers.sort((a, b) =>
+                a.data.category.localeCompare(b.data.category) ||
+                a.data.title.localeCompare(b.data.title)
+            );
+
+            sortedMarkers.forEach(item => {
+                const loc = item.data;
+                const listItem = document.createElement('div');
+                listItem.className = 'location-item';
+
+                const iconColor = CATEGORIES[loc.category].color;
+                const categoryName = translation.categories[loc.category];
+
+                // 목록 아이콘
+                const iconHtml = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${iconColor}; margin-right:8px; vertical-align: top; margin-top: 4px; border: 1px solid #666;"></span>`;
+
+                // 목록 텍스트 (제목과 카테고리/설명) - UI 개선을 위해 Flexbox 사용
+                listItem.innerHTML = `
+                    <div style="display: flex;">
+                        ${iconHtml}
+                        <div style="flex: 1;">
+                            <strong>${loc.title}</strong>
+                            <br>
+                            <span style="color:#777; font-size:12px;">(${categoryName}) - ${loc.description}</span>
+                        </div>
+                    </div>
+                `;
+
+                // 목록 클릭 이벤트
+                listItem.onclick = () => {
+                    map.setZoom(16); // 클릭 시 적절한 줌 레벨로 확대
+                    google.maps.event.trigger(item.marker, 'click');
+                };
+
+                listPanel.appendChild(listItem);
+            });
+        }
+    </script>
+</body>
+</html>
