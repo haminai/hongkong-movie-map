@@ -1,0 +1,9 @@
+# _config.yml 파일
+
+# 다른 설정들이 여기에 있을 수 있습니다...
+# theme: jekyll-theme-minimal
+# title: 홍콩 영화 지도
+
+# --- 아래 부분을 추가하거나 확인해주세요 ---
+plugins:
+  - jekyll-sitemap
